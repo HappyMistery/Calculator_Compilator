@@ -8,17 +8,25 @@
 #                          GENERAL DEFINES	 						 #
 CC = gcc 															 #
 LEX = flex 															 #
-LIB =-lc-lfl  														 #
+LIB = -lc -lfl  													 #
 ELEX = lex_spec.l  												     #
-OBJ = lex_spec.o  													 #
-SRC = lex_spec.c  													 #
+OBJ = lex.yy.o  													 #
+SRC = lex.yy.c  													 #
 BIN = lex_spec  													 #
-LFLAGS =-n-o $*.c  													 #
-CFLAGS =-ansi-Wall-g  												 #
+LFLAGS = -n -o $*.c  												 #
+CFLAGS = -ansi -Wall -g  											 #
 ###################################################################### 
 
-all : $(SRC) $(CC)-o $(BIN) $(CFLAGS) $< $(LIB) 
+all: $(BIN)
 
-$(SRC) : $(ELEX) $(LEX) $(LFLAGS) $< 
+$(BIN): $(OBJ)
+	$(CC) -o $(BIN) $(OBJ) $(LIB)
 
-clean : rm-f $(BIN) $(OBJ) $(SRC)
+$(OBJ): $(SRC)
+	$(CC) $(CFLAGS) -c $(SRC)
+
+$(SRC): $(ELEX)
+	$(LEX) $(ELEX)
+
+clean:
+	rm -f $(BIN) $(OBJ) $(SRC)

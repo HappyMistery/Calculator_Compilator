@@ -1,0 +1,26 @@
+5
+14643631
+e6
+e1234
+e-67
+0.665
+12435232151.1341341
+43.23e6
+2.567e-3
+"hola"
+"hola
+"
+TRUE
+FALSE
+//hola
+//ho
+la
+#hola
+#ho
+la
+/*comentari en una linia*/
+/*dins*/ fora
+/*aquest es un 
+comentari en
+varies linies
+*/
