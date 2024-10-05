@@ -1,26 +1,19 @@
-5
-14643631
-e6
-e1234
-e-67
-0.665
-12435232151.1341341
-43.23e6
-2.567e-3
-"hola"
-"hola
-"
-TRUE
-FALSE
-//hola
-//ho
-la
-#hola
-#ho
-la
-/*comentari en una linia*/
-/*dins*/ fora
-/*aquest es un 
-comentari en
-varies linies
-*/
+// assignacions 
+x := 1.5 
+i := 5 
+z := i * (x + i) - i / 4.0 
+s := "Hola" 
+b := z > 3 or not (i > 0 and i <= 10) or false 
+// expressions bàsiques 
+x 
+i 
+z 
+s 
+b 
+/* 
+* expressions 
+*/ 
+i + i * 2 
+-i + x 
+s + (s + i) + "--" + x + b 
+b or not b 

@@ -1,3 +1,4 @@
-lex_spec
+calc_compiler
+*.h
 *.c
 *.o
