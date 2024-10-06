@@ -5,6 +5,8 @@
   #include <stdbool.h>
   #include <unistd.h>
   #include <math.h>
+  #include "symtab.h"
+
   int yylex(void);
   void yyerror(const char *s);
 
@@ -90,7 +92,7 @@ expr_float:
 
 expr_bool:
     BOOL      { $$ = $1; }
-    | ID ASSIGN expr_bool   { $$ = $3; ($3 == 1) ? "true" : "false"; }
+    | ID ASSIGN expr_bool   { $$ = $3; }
     | expr_int HIG expr_int { $$ = $1 > $3; }
     | expr_int HEQ expr_int { $$ = $1 >= $3; }
     | expr_int LOW expr_int { $$ = $1 < $3; }
