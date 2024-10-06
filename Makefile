@@ -9,7 +9,7 @@
 CC = gcc 															 #
 LEX = flex 															 #
 BISON = bison														 #
-LIB = -lc -lfl  													 #
+LIB = -lm -lc -lfl  												 #
 ELEX = lex_spec.l  												     #
 PARSER = bison_spec.y												 #
 OBJ = lex.yy.o bison_spec.tab.o  									 #
