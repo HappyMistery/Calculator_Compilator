@@ -2,3 +2,5 @@ calc_compiler
 *.h
 *.c
 *.o
+!symtab.c
+!symtab.h
