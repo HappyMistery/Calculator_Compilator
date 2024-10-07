@@ -12,6 +12,9 @@
 
   extern int yylineno;
   #define YYERROR_VERBOSE 1
+
+  const double PI_CONST = 3.141592653589793;
+  const double E_CONST = 2.718281828459045;
 %}
 %define parse.error verbose
 
@@ -22,7 +25,7 @@
 }
 
 %token <ival> INT BOOL
-%token <fval> FLOAT PI E
+%token <fval> FLOAT PI E SIN COS TAN
 %token <sval> STRING ID
 %token COMM ASSIGN 
         ADD SUB MUL DIV MOD POW 
@@ -30,7 +33,7 @@
         NOT AND ORR
 
 %type <ival> expr_int expr_bool
-%type <fval> expr_float
+%type <fval> expr_float expr_trig
 %type <sval> expr_str
 
 %start calculator
@@ -75,9 +78,10 @@ expr_int:
 
 expr_float:
     FLOAT     { $$ = $1; }
-  | PI        { $$ = 3.14159; }
-  | E         { $$ = 2.71828; }
+  | PI        { $$ = PI_CONST; }
+  | E         { $$ = E_CONST; }
   | '(' expr_float ')'          { $$ = $2; }
+  | expr_trig                   { $$ = $1; }
   | expr_float POW expr_float   { $$ = pow($1,$3); }
   | expr_int POW expr_float     { $$ = pow($1,$3); }
   | expr_float POW expr_int     { $$ = pow($1,$3); }
@@ -96,6 +100,15 @@ expr_float:
   | expr_float SUB expr_float   { $$ = $1 - $3; }
   | expr_int SUB expr_float     { $$ = $1 - $3; }
   | expr_float SUB expr_int     { $$ = $1 - $3; }
+;
+
+expr_trig:
+    SIN expr_float    { $$ = sin($2 * (PI_CONST / 180)); }
+  | SIN expr_int      { $$ = sin($2 * (PI_CONST / 180)); }
+  | COS expr_float    { $$ = cos($2 * (PI_CONST / 180)); }
+  | COS expr_int      { $$ = cos($2 * (PI_CONST / 180)); }
+  | TAN expr_float    { $$ = tan($2 * (PI_CONST / 180)); }
+  | TAN expr_int      { $$ = tan($2 * (PI_CONST / 180)); }
 ;
 
 expr_bool:

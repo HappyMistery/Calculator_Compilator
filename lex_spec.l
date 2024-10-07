@@ -29,6 +29,10 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 "or"        { return ORR; }
 "PI"        { return PI; }
 "E"         { return E; }
+"sin"       { return SIN; }
+"cos"       { return COS; }
+"tan"       { return TAN; }
+
 
 {INT}       { yylval.ival = atoi(yytext); return INT; }
 {EXP}       { yylval.fval = atof(yytext); return FLOAT; }
