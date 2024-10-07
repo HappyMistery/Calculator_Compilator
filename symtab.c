@@ -258,6 +258,7 @@ int sym_enter(sym_name_type  name, sym_value_type *value)
 #endif
     {
     struct sym_binding **ptr;
+    printf("Entering variable\n");
 
 #ifdef SYM_MULTIPLE_NAME_SPACES
     if (lookup_binding(name, &ptr, name_space))
@@ -265,6 +266,7 @@ int sym_enter(sym_name_type  name, sym_value_type *value)
     if (lookup_binding(name, &ptr))
 #endif
         { /* Not found in symbol table so create a new symbol table entry.  */
+        printf("CREATING variable\n");
         struct sym_binding *sym;
 
         sym = (struct sym_binding *)

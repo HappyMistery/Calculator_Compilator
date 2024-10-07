@@ -36,7 +36,7 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 {STRING}    { yylval.sval = yytext; return STRING; }
 {BOOL}      { yylval.ival = (strcmp(yytext, "true") == 0) ? 1 : 0; return BOOL; }
 
-{ID}        { yylval.sval = strdup(yytext); return ID; }
+{ID}        { yylval.sval = (char *) strdup(yytext); return ID; }
 {COMM}      { return COMM; }
 
 ":="        { return ASSIGN; }

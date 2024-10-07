@@ -11,7 +11,11 @@
 
 
 /* The type of the value field of symbol table entries                      */
-typedef void * sym_value_type;          /* you will need to replace this    */
+typedef union {
+    int ival;
+    float fval;
+    char* sval;
+} sym_value_type;          /* you will need to replace this    */
                                         /* with a declaration appropriate   */
                                         /* for your application.            */
 					/*Ho subtituim per un unio o struct */
@@ -99,7 +103,7 @@ typedef const char * sym_name_type;     /* If you are using something other */
 
 /* comment out SYM_SCOPE_STACK_DEPTH to store scope stack as linked         */
 /* list instead of array */
-#define SYM_SCOPE_STACK_DEPTH 100
+/* #define SYM_SCOPE_STACK_DEPTH 100 */
 	/*Implementa els ambits com una pila d'ambits. Nombre max de*/
 	/*fondaria de la pila.*/
 	/*per un interpet es millor tenir un arbre. El que haig de fer es */
