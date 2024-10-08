@@ -143,8 +143,10 @@ expr_bool:
 expr_str:
     STRING    { $$ = $1; }
   | expr_str ADD expr_str   { $$ = strcat($1, $3); }
-  | expr_str ADD expr_int   { char* str; $$ = strcat($1, itoa($3, str, 10)); }
-  | expr_int ADD expr_str   { char* str; $$ = strcat(itoa($1, str, 10), $3); }
+  | expr_str ADD expr_int   { char str[511]; sprintf(str, "%d", $3); $$ = strcat($1, str); }
+  | expr_int ADD expr_str   { char str[511]; sprintf(str, "%d", $1); $$ = strcat(str, $3); }
+  | expr_str ADD expr_float   { char str[511]; sprintf(str, "%g", $3); $$ = strcat($1, str); }
+  | expr_float ADD expr_str   { char str[511]; sprintf(str, "%g", $1); $$ = strcat(str, $3); }
 ;
 
 %%
