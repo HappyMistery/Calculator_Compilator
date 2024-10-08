@@ -11,6 +11,15 @@
     #include <math.h>
 
     void yyerror(char *s);
+    #ifndef strdup
+    char* strdup(const char* s) {
+        char* copy = malloc(strlen(s) + 1);
+        if (copy) {
+            strcpy(copy, s);
+        }
+        return copy;
+    }
+    #endif
 %}
 
 /******************* DEFINITIONS *******************/
@@ -37,7 +46,12 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 {INT}       { yylval.ival = atoi(yytext); return INT; }
 {EXP}       { yylval.fval = atof(yytext); return FLOAT; }
 {FLOAT}     { yylval.fval = atof(yytext); return FLOAT; }
-{STRING}    { yylval.sval = yytext; return STRING; }
+{STRING}    { char *temp = strdup(yytext);
+              temp[yyleng - 1] = '\0'; /* eliminar cometes finals canviantles per el delimitador*/
+              yylval.sval = strdup(temp + 1); /* eliminar cometes inicials movent el punter a temp en 1 pos */
+              free(temp);
+              return STRING; 
+            }
 {BOOL}      { yylval.ival = (strcmp(yytext, "true") == 0) ? 1 : 0; return BOOL; }
 
 {ID}        { yylval.sval = (char *) strdup(yytext); return ID; }
