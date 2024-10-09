@@ -1,41 +1,57 @@
-###################################################################### 
-#                        Calculator Compilator                       #
-#                                                                    # 
-#                          Jaume Tello Viñas                         #
-#                              Makefile                              #
-#                             Pràctica 1                             #
 ######################################################################
-#                          GENERAL DEFINES	 						 #
-CC = gcc 															 #
-LEX = flex 															 #
-BISON = bison														 #
-LIB = -lm -lc -lfl  												 #
-ELEX = lex_spec.l  												     #
-PARSER = bison_spec.y												 #
-OBJ = lex.yy.o bison_spec.tab.o symtab.o  							 #
-SRC_LEX = lex.yy.c  												 #
-SRC_PARSER = bison_spec.tab.c										 #
-SRC_SYMTAB = symtab.c												 #
-BIN = calc_compiler  												 #
-LFLAGS = -n -o $*.c  												 #
-CFLAGS = -ansi -Wall -g  											 #
+#
+#                           Compiladors
+#
+######################################################################
+
+CC = gcc
+LEX = flex
+YACC = bison
+LIB = -lm -lc -lfl
+
+SRC_LEX = lex_spec.l
+SRC_YACC = bison_spec.y
+
+LEX_OUT = lex.yy.c
+YACC_OUT_C = bison_spec.tab.c
+YACC_OUT_H = bison_spec.tab.h
+YACC_OUT = $(YACC_OUT_C) $(YACC_OUT_H)
+
+OBJ = *.o
+
+SRC = main.c
+BIN = calc_compiler.exe
+
+SRC_EXTRA = dades.c funcions.c
+
+LFLAGS = -n -o $*.c
+YFLAGS = -d -v
+CFLAGS = -ansi -Wall -g
+
+EG_IN = test_file.txt
+EG_OUT = output.txt
+
+
 ######################################################################
 
 all: $(BIN)
 
 $(BIN): $(OBJ)
-	$(CC) -o $(BIN) $(OBJ) $(LIB)
+	$(CC) -o $(BIN) $(CFLAGS) $(SRC) $(SRC_EXTRA) $(YACC_OUT_C) $(LEX_OUT) $(LIB)
 
-$(OBJ): $(SRC_LEX) $(SRC_PARSER) $(SRC_SYMTAB)
-	$(CC) $(CFLAGS) -c $(SRC_LEX)
-	$(CC) $(CFLAGS) -c $(SRC_PARSER)
-	$(CC) $(CFLAGS) -c $(SRC_SYMTAB)
+$(OBJ): $(LEX_OUT) $(YACC_OUT)
+	$(CC) $(CFLAGS) -c $(LEX_OUT)
+	$(CC) $(CFLAGS) -c $(YACC_OUT_C)
 
-$(SRC_LEX): $(ELEX)
-	$(LEX) $(ELEX)
+$(LEX_OUT): $(SRC_LEX)
+	$(LEX) $(LFLAGS) $(SRC_LEX)
 
-$(SRC_PARSER): $(PARSER)
-	$(BISON) -d $(PARSER)
+$(YACC_OUT): $(SRC_YACC)
+	$(YACC) $(YFLAGS) $(SRC_YACC)
 
 clean:
-	rm -f $(BIN) $(OBJ) $(SRC_LEX) bison_spec.tab.* lex.yy.* symtab.o
+	rm -f *~ $(BIN) $(OBJ) $(YACC_OUT) $(LEX_OUT) $(EG_OUT)
+
+eg: $(EG_IN)
+	./$(BIN) $(EG_IN) $(EG_OUT)
+	cat $(EG_OUT)

@@ -5,7 +5,6 @@
   #include <stdbool.h>
   #include <unistd.h>
   #include <math.h>
-  #include "symtab.h"
 
   int yylex(void);
   /* int yydebug = 1; */
@@ -248,16 +247,6 @@ str_expr:
 ;
 
 %%
-
-void yyerror(const char *s) {
-    fprintf(stderr, "\nError: %s in line %d\n", s, yylineno);
-}
-
-int main() {
-    printf("Introdueix una expressió:\n");
-    return(yyparse());
-}
-
 int yywrap() {
   return 1;
 }
