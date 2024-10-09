@@ -4,3 +4,6 @@ calc_compiler
 *.o
 !symtab.c
 !symtab.h
+!dades.*
+!funcions.*
+!main.c
