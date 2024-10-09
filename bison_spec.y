@@ -8,6 +8,7 @@
   #include "symtab.h"
 
   int yylex(void);
+  /* int yydebug = 1; */
   void yyerror(const char *s);
 
   extern int yylineno;
@@ -15,8 +16,6 @@
 
   const double PI_CONST = 3.141592653589793;
   const double E_CONST = 2.718281828459045;
-
-  char* concat_strings(const char *str1, const char *str2);
 %}
 %define parse.error verbose
 
@@ -34,9 +33,9 @@
         HIG HEQ LOW LEQ EQU NEQ 
         NOT AND ORR
 
-%type <ival> expr_int expr_bool
-%type <fval> expr_float expr_trig
-%type <sval> expr_str
+%type <ival> int_expr int_term int_pow int_factor bool_expr
+%type <fval> float_expr float_term float_pow float_factor trig_expr
+%type <sval> str_expr
 
 %start calculator
 
@@ -53,100 +52,129 @@ stmnt_list:
 ;
 
 expr:
-    expr_arit
-  | expr_bool   { printf("Result: %s\n", ($1 == 1) ? "true" : "false"); }
-  | expr_str    { printf("Result: %s\n", $1); }
-  | ID ASSIGN expr_str    { printf("%s\n", $3); }
+    arit_expr
+  | bool_expr   { printf("Result: %s\n", ($1 == 1) ? "true" : "false"); }
+  | str_expr    { printf("Result: %s\n", $1); }
+  | ID ASSIGN str_expr    { printf("%s\n", $3); }
 ;
 
-expr_arit:
-    expr_int      { printf("Result: %d\n", $1); }
-  | expr_float    { printf("Result: %g\n", $1); }
-  | ID ASSIGN expr_int    { printf("%d\n", $3); }
-  | ID ASSIGN expr_float  { printf("%g\n", $3); }
+arit_expr:
+    int_expr      { printf("Result: %d\n", $1); }
+  | float_expr    { printf("Result: %g\n", $1); }
+  | ID ASSIGN int_expr    { printf("%d\n", $3); }
+  | ID ASSIGN float_expr  { printf("%g\n", $3); }
 ;
 
-expr_int:
+int_expr:
+    SUB int_term          { $$ = -$2; }
+  | ADD int_term          { $$ = +$2; }
+  | int_expr ADD int_term { $$ = $1 + $3; }
+  | int_expr SUB int_term { $$ = $1 - $3; }
+  | int_term         { $$ = $1; }
+;
+
+int_term:
+    int_term MUL int_pow { $$ = $1 * $3; }
+  | int_term MOD int_pow { $$ = $1 % $3; }
+  | int_pow          { $$ = $1; } 
+;
+
+int_pow:
+    int_pow POW int_factor { $$ = pow($1,$3); }
+  | int_factor    { $$ = $1; }
+;
+
+int_factor:
     INT       { $$ = $1; }
-  | '(' expr_int ')' { $$ = $2; }
-  | expr_int POW expr_int { $$ = pow($1,$3); }
-  | expr_int MUL expr_int { $$ = $1 * $3; }
-  | expr_int MOD expr_int { $$ = $1 % $3; }
-  | SUB expr_int          { $$ = -$2; }
-  | ADD expr_int          { $$ = +$2; }
-  | expr_int ADD expr_int { $$ = $1 + $3; }
-  | expr_int SUB expr_int { $$ = $1 - $3; }
+  | int_expr  { $$ = $1; }
+  | '(' int_expr ')'  { $$ = $2; }
 ;
 
-expr_float:
+
+
+
+float_expr:  
+   SUB float_expr               { $$ = -$2; }
+  | ADD float_expr              { $$ = +$2; }
+  | float_expr ADD float_term   { $$ = $1 + $3; }
+  | int_expr ADD float_term     { $$ = $1 + $3; }
+  | float_expr ADD int_term     { $$ = $1 + $3; }
+  | float_expr SUB float_term   { $$ = $1 - $3; }
+  | int_expr SUB float_term     { $$ = $1 - $3; }
+  | float_expr SUB int_term     { $$ = $1 - $3; }
+  | float_term             { $$ = $1; }
+;
+
+float_term:
+    float_term MUL float_pow   { $$ = $1 * $3; }
+  | int_term MUL float_pow     { $$ = $1 * $3; }
+  | float_term MUL int_pow     { $$ = $1 * $3; }
+  | float_term DIV float_pow   { $$ = $1 / $3; }
+  | int_term DIV int_pow       { $$ = (float)$1 / (float)$3; }
+  | int_term DIV float_pow     { $$ = $1 / $3; }
+  | float_term DIV int_pow     { $$ = $1 / $3; }
+  | float_pow        { $$ = $1; }
+;
+
+float_pow:
+    float_pow POW float_factor   { $$ = pow($1,$3); }
+  | int_pow POW float_factor     { $$ = pow($1,$3); }
+  | float_pow POW int_factor     { $$ = pow($1,$3); }
+  | float_factor        { $$ = $1; }
+;
+
+float_factor:
     FLOAT     { $$ = $1; }
   | PI        { $$ = PI_CONST; }
   | E         { $$ = E_CONST; }
-  | '(' expr_float ')'          { $$ = $2; }
-  | expr_trig                   { $$ = $1; }
-  | expr_float POW expr_float   { $$ = pow($1,$3); }
-  | expr_int POW expr_float     { $$ = pow($1,$3); }
-  | expr_float POW expr_int     { $$ = pow($1,$3); }
-  | expr_float MUL expr_float   { $$ = $1 * $3; }
-  | expr_int MUL expr_float     { $$ = $1 * $3; }
-  | expr_float MUL expr_int     { $$ = $1 * $3; }
-  | expr_float DIV expr_float   { $$ = $1 / $3; }
-  | expr_int DIV expr_int       { $$ = (float)$1 / (float)$3; }
-  | expr_int DIV expr_float     { $$ = $1 / $3; }
-  | expr_float DIV expr_int     { $$ = $1 / $3; }
-  | SUB expr_float              { $$ = -$2; }
-  | ADD expr_float              { $$ = +$2; }
-  | expr_float ADD expr_float   { $$ = $1 + $3; }
-  | expr_int ADD expr_float     { $$ = $1 + $3; }
-  | expr_float ADD expr_int     { $$ = $1 + $3; }
-  | expr_float SUB expr_float   { $$ = $1 - $3; }
-  | expr_int SUB expr_float     { $$ = $1 - $3; }
-  | expr_float SUB expr_int     { $$ = $1 - $3; }
+  | trig_expr           { $$ = $1; }
+  | float_expr          { $$ = $1; }
+  | '(' float_expr ')'  { $$ = $2; }
 ;
 
-expr_trig:
-    SIN expr_float    { $$ = sin($2 * (PI_CONST / 180)); }
-  | SIN expr_int      { $$ = sin($2 * (PI_CONST / 180)); }
-  | COS expr_float    { $$ = cos($2 * (PI_CONST / 180)); }
-  | COS expr_int      { $$ = cos($2 * (PI_CONST / 180)); }
-  | TAN expr_float    { $$ = tan($2 * (PI_CONST / 180)); }
-  | TAN expr_int      { $$ = tan($2 * (PI_CONST / 180)); }
+trig_expr:
+    SIN float_expr    { $$ = sin($2 * (PI_CONST / 180)); }
+  | SIN int_expr      { $$ = sin($2 * (PI_CONST / 180)); }
+  | COS float_expr    { $$ = cos($2 * (PI_CONST / 180)); }
+  | COS int_expr      { $$ = cos($2 * (PI_CONST / 180)); }
+  | TAN float_expr    { $$ = tan($2 * (PI_CONST / 180)); }
+  | TAN int_expr      { $$ = tan($2 * (PI_CONST / 180)); }
 ;
 
-expr_bool:
+bool_expr:
     BOOL      { $$ = $1; }
-    | ID ASSIGN expr_bool       { $$ = $3; }
-    | '(' expr_bool ')'         { $$ = $2; }
-    | NOT expr_bool             { $$ = !$2; }
-    | expr_bool AND expr_bool   { $$ = $1 && $3; }
-    | expr_bool ORR expr_bool   { $$ = $1 || $3; }
-    | expr_int HIG expr_int     { $$ = $1 > $3; }
-    | expr_int HEQ expr_int     { $$ = $1 >= $3; }
-    | expr_int LOW expr_int     { $$ = $1 < $3; }
-    | expr_int LEQ expr_int     { $$ = $1 <= $3; }
-    | expr_int EQU expr_int     { $$ = $1 == $3; }
-    | expr_int NEQ expr_int     { $$ = $1 != $3; }
-    | expr_int HIG expr_float   { $$ = $1 > $3; }
-    | expr_int HEQ expr_float   { $$ = $1 >= $3; }
-    | expr_int LOW expr_float   { $$ = $1 < $3; }
-    | expr_int LEQ expr_float   { $$ = $1 <= $3; }
-    | expr_int EQU expr_float   { $$ = $1 == $3; }
-    | expr_int NEQ expr_float   { $$ = $1 != $3; }
-    | expr_float HIG expr_int   { $$ = $1 > $3; }
-    | expr_float HEQ expr_int   { $$ = $1 >= $3; }
-    | expr_float LOW expr_int   { $$ = $1 < $3; }
-    | expr_float LEQ expr_int   { $$ = $1 <= $3; }
-    | expr_float EQU expr_int   { $$ = $1 == $3; }
-    | expr_float NEQ expr_int   { $$ = $1 != $3; }
+    | ID ASSIGN bool_expr       { $$ = $3; }
+    | '(' bool_expr ')'         { $$ = $2; }
+    | NOT bool_expr             { $$ = !$2; }
+    | bool_expr AND bool_expr   { $$ = $1 && $3; }
+    | bool_expr ORR bool_expr   { $$ = $1 || $3; }
+    | int_expr HIG int_expr     { $$ = $1 > $3; }
+    | int_expr HEQ int_expr     { $$ = $1 >= $3; }
+    | int_expr LOW int_expr     { $$ = $1 < $3; }
+    | int_expr LEQ int_expr     { $$ = $1 <= $3; }
+    | int_expr EQU int_expr     { $$ = $1 == $3; }
+    | int_expr NEQ int_expr     { $$ = $1 != $3; }
+    | int_expr HIG float_expr   { $$ = $1 > $3; }
+    | int_expr HEQ float_expr   { $$ = $1 >= $3; }
+    | int_expr LOW float_expr   { $$ = $1 < $3; }
+    | int_expr LEQ float_expr   { $$ = $1 <= $3; }
+    | int_expr EQU float_expr   { $$ = $1 == $3; }
+    | int_expr NEQ float_expr   { $$ = $1 != $3; }
+    | float_expr HIG int_expr   { $$ = $1 > $3; }
+    | float_expr HEQ int_expr   { $$ = $1 >= $3; }
+    | float_expr LOW int_expr   { $$ = $1 < $3; }
+    | float_expr LEQ int_expr   { $$ = $1 <= $3; }
+    | float_expr EQU int_expr   { $$ = $1 == $3; }
+    | float_expr NEQ int_expr   { $$ = $1 != $3; }
 ;
 
-expr_str:
+str_expr:
     STRING    { $$ = $1; }
-  | expr_str ADD expr_str   { $$ = strcat($1, $3); }
-  | expr_str ADD expr_int   { char str[511]; sprintf(str, "%d", $3); $$ = strcat($1, str); }
-  | expr_int ADD expr_str   { char str[511]; sprintf(str, "%d", $1); $$ = strcat(str, $3); }
-  | expr_str ADD expr_float   { char str[511]; sprintf(str, "%g", $3); $$ = strcat($1, str); }
-  | expr_float ADD expr_str   { char str[511]; sprintf(str, "%g", $1); $$ = strcat(str, $3); }
+  | str_expr ADD str_expr   { $$ = strcat($1, $3); }
+  | str_expr ADD int_expr   { char str[511]; sprintf(str, "%d", $3); $$ = strcat($1, str); }
+  | int_expr ADD str_expr   { char str[511]; sprintf(str, "%d", $1); $$ = strcat(str, $3); }
+  | str_expr ADD float_expr   { char str[511]; sprintf(str, "%g", $3); $$ = strcat($1, str); }
+  | float_expr ADD str_expr   { char str[511]; sprintf(str, "%g", $1); $$ = strcat(str, $3); }
 ;
 
 %%
