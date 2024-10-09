@@ -122,32 +122,32 @@ float_expr:
     SUB float_expr               { $$ = -$2; }
   | ADD float_expr              { $$ = +$2; }
   | float_expr ADD float_term   { $$ = $1 + $3; }
-  | int_expr ADD float_term     { $$ = $1 + $3; }
-  | float_expr ADD int_expr     { $$ = $1 + $3; }
+  | start_int_expr ADD float_term     { $$ = $1 + $3; }
+  | float_expr ADD start_int_expr     { $$ = $1 + $3; }
   | float_expr SUB float_term   { $$ = $1 - $3; }
-  | int_expr SUB float_term     { $$ = $1 - $3; }
-  | float_expr SUB int_expr     { $$ = $1 - $3; }
+  | start_int_expr SUB float_term     { $$ = $1 - $3; }
+  | float_expr SUB start_int_expr     { $$ = $1 - $3; }
   | float_term             { $$ = $1; }
 ;
 
 float_term:
     float_term MUL float_pow    { $$ = $1 * $3; }
-  | int_expr MUL float_pow      { $$ = $1 * $3; }
-  | float_term MUL int_expr     { $$ = $1 * $3; }
+  | start_int_expr MUL float_pow      { $$ = $1 * $3; }
+  | float_term MUL start_int_expr     { $$ = $1 * $3; }
   | float_term DIV float_pow    { $$ = $1 / $3; }
-  | int_expr DIV int_expr       { $$ = (float)$1 / (float)$3; }
-  | int_expr DIV float_pow      { $$ = $1 / $3; }
-  | float_term DIV int_expr     { $$ = $1 / $3; }
+  | start_int_expr DIV start_int_expr       { $$ = (float)$1 / (float)$3; }
+  | start_int_expr DIV float_pow      { $$ = $1 / $3; }
+  | float_term DIV start_int_expr     { $$ = $1 / $3; }
   | float_term MOD float_pow    { $$ = fmod($1, $3); }
-  | int_expr MOD float_pow      { $$ = fmod((float)$1, $3); }
-  | float_term MOD int_expr     { $$ = fmod($1, (float)$3); }
+  | start_int_expr MOD float_pow      { $$ = fmod((float)$1, $3); }
+  | float_term MOD start_int_expr     { $$ = fmod($1, (float)$3); }
   | float_pow             { $$ = $1; }
 ;
 
 float_pow:
     float_pow POW float_factor  { $$ = pow($1,$3); }
-  | int_expr POW float_factor   { $$ = pow($1,$3); }
-  | float_pow POW int_expr      { $$ = pow($1,$3); }
+  | start_int_expr POW float_factor   { $$ = pow($1,$3); }
+  | float_pow POW start_int_expr      { $$ = pow($1,$3); }
   | float_factor          { $$ = $1; }
 ;
 
