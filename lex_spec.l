@@ -41,6 +41,12 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 "sin"       { return SIN; }
 "cos"       { return COS; }
 "tan"       { return TAN; }
+"LEN"       { return LEN; }
+"SUBSTR"    { return SUBSTR; }
+"OCT"       { return OCT; }
+"BIN"       { return BIN; }
+"HEX"       { return HEX; }
+"DEC"       { return DEC; }
 
 
 {INT}       { yylval.ival = atoi(yytext); return INT; }

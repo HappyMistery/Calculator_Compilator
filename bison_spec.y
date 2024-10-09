@@ -32,9 +32,11 @@
         ADD SUB MUL DIV MOD POW 
         HIG HEQ LOW LEQ EQU NEQ 
         NOT AND ORR
+        LEN SUBSTR
+        BIN OCT HEX DEC
 
-%type <ival> int_expr int_term int_pow int_factor bool_expr bool_orr bool_and bool_not bool_term
-%type <fval> float_expr float_term float_pow float_factor
+%type <ival> start_int_expr int_expr int_term int_pow int_factor bool_expr bool_orr bool_and bool_not bool_term
+%type <fval> start_float_expr float_expr float_term float_pow float_factor
 %type <sval> str_expr
 
 %start calculator
@@ -59,8 +61,8 @@ expr:
 ;
 
 arit_expr:
-    int_expr      { printf("Result: %d\n", $1); }
-  | float_expr    { printf("Result: %g\n", $1); }
+    start_int_expr      { printf("Result: %d\n", $1); }
+  | start_float_expr    { printf("Result: %g\n", $1); }
   | ID ASSIGN int_expr    { printf("%d\n", $3); }
   | ID ASSIGN float_expr  { printf("%g\n", $3); }
 ;
@@ -69,9 +71,16 @@ arit_expr:
 
 
 
+
+
+start_int_expr:
+    int_expr    { $$ = $1; }
+;
+
 int_expr:
-    SUB int_term            { $$ = -$2; }
-  | ADD int_term            { $$ = +$2; }
+    LEN str_expr            { $$ = strlen($2); }
+  | SUB int_expr            { $$ = -$2; }
+  | ADD int_expr            { $$ = +$2; }
   | int_expr ADD int_term   { $$ = $1 + $3; }
   | int_expr SUB int_term   { $$ = $1 - $3; }
   | int_term            { $$ = $1; }
@@ -98,8 +107,19 @@ int_factor:
 
 
 
+
+
+
+
+
+
+
+start_float_expr:
+    float_expr    { $$ = $1; }
+;
+
 float_expr:  
-   SUB float_expr               { $$ = -$2; }
+    SUB float_expr               { $$ = -$2; }
   | ADD float_expr              { $$ = +$2; }
   | float_expr ADD float_term   { $$ = $1 + $3; }
   | int_expr ADD float_term     { $$ = $1 + $3; }
@@ -136,34 +156,50 @@ float_factor:
   | PI        { $$ = PI_CONST; }
   | E         { $$ = E_CONST; }
   | SIN float_expr      { $$ = sin($2 * (PI_CONST / 180)); }
-  | SIN int_expr          { $$ = sin($2 * (PI_CONST / 180)); }
+  | SIN start_int_expr  { $$ = sin($2 * (PI_CONST / 180)); }
   | COS float_expr      { $$ = cos($2 * (PI_CONST / 180)); }
-  | COS int_expr          { $$ = cos($2 * (PI_CONST / 180)); }
+  | COS start_int_expr  { $$ = cos($2 * (PI_CONST / 180)); }
   | TAN float_expr      { $$ = tan($2 * (PI_CONST / 180)); }
-  | TAN int_expr          { $$ = tan($2 * (PI_CONST / 180)); }
-  | float_expr            { $$ = $1; }
-  | '(' float_expr ')'    { $$ = $2; }
+  | TAN start_int_expr  { $$ = tan($2 * (PI_CONST / 180)); }
+  | float_expr          { $$ = $1; }
+  | '(' float_expr ')'  { $$ = $2; }
 ;
 
+
+
+
+
+
+
+
+
+
+
 bool_expr:
-      int_expr HIG int_expr     { $$ = $1 > $3; }
-    | int_expr HEQ int_expr     { $$ = $1 >= $3; }
-    | int_expr LOW int_expr     { $$ = $1 < $3; }
-    | int_expr LEQ int_expr     { $$ = $1 <= $3; }
-    | int_expr EQU int_expr     { $$ = $1 == $3; }
-    | int_expr NEQ int_expr     { $$ = $1 != $3; }
-    | int_expr HIG float_expr   { $$ = $1 > $3; }
-    | int_expr HEQ float_expr   { $$ = $1 >= $3; }
-    | int_expr LOW float_expr   { $$ = $1 < $3; }
-    | int_expr LEQ float_expr   { $$ = $1 <= $3; }
-    | int_expr EQU float_expr   { $$ = $1 == $3; }
-    | int_expr NEQ float_expr   { $$ = $1 != $3; }
-    | float_expr HIG int_expr   { $$ = $1 > $3; }
-    | float_expr HEQ int_expr   { $$ = $1 >= $3; }
-    | float_expr LOW int_expr   { $$ = $1 < $3; }
-    | float_expr LEQ int_expr   { $$ = $1 <= $3; }
-    | float_expr EQU int_expr   { $$ = $1 == $3; }
-    | float_expr NEQ int_expr   { $$ = $1 != $3; }
+      start_int_expr HIG start_int_expr     { $$ = $1 > $3; }
+    | start_int_expr HEQ start_int_expr     { $$ = $1 >= $3; }
+    | start_int_expr LOW start_int_expr     { $$ = $1 < $3; }
+    | start_int_expr LEQ start_int_expr     { $$ = $1 <= $3; }
+    | start_int_expr EQU start_int_expr     { $$ = $1 == $3; }
+    | start_int_expr NEQ start_int_expr     { $$ = $1 != $3; }
+    | start_float_expr HIG start_float_expr { $$ = $1 > $3; }
+    | start_float_expr HEQ start_float_expr { $$ = $1 >= $3; }
+    | start_float_expr LOW start_float_expr { $$ = $1 < $3; }
+    | start_float_expr LEQ start_float_expr { $$ = $1 <= $3; }
+    | start_float_expr EQU start_float_expr { $$ = $1 == $3; }
+    | start_float_expr NEQ start_float_expr { $$ = $1 != $3; }
+    | start_int_expr HIG start_float_expr   { $$ = $1 > $3; }
+    | start_int_expr HEQ start_float_expr   { $$ = $1 >= $3; }
+    | start_int_expr LOW start_float_expr   { $$ = $1 < $3; }
+    | start_int_expr LEQ start_float_expr   { $$ = $1 <= $3; }
+    | start_int_expr EQU start_float_expr   { $$ = $1 == $3; }
+    | start_int_expr NEQ start_float_expr   { $$ = $1 != $3; }
+    | start_float_expr HIG start_int_expr   { $$ = $1 > $3; }
+    | start_float_expr HEQ start_int_expr   { $$ = $1 >= $3; }
+    | start_float_expr LOW start_int_expr   { $$ = $1 < $3; }
+    | start_float_expr LEQ start_int_expr   { $$ = $1 <= $3; }
+    | start_float_expr EQU start_int_expr   { $$ = $1 == $3; }
+    | start_float_expr NEQ start_int_expr   { $$ = $1 != $3; }
     | bool_orr      { $$ = $1; }
 ;
 
@@ -189,13 +225,26 @@ bool_term:
     | '(' bool_expr ')'     { $$ = $2; }
 ;
 
+
+
+
+
+
+
+
+
+
+
+
+
 str_expr:
     STRING    { $$ = $1; }
-  | str_expr ADD str_expr   { $$ = strcat($1, $3); }
-  | str_expr ADD int_expr   { char str[511]; sprintf(str, "%d", $3); $$ = strcat($1, str); }
-  | int_expr ADD str_expr   { char str[511]; sprintf(str, "%d", $1); $$ = strcat(str, $3); }
-  | str_expr ADD float_expr   { char str[511]; sprintf(str, "%g", $3); $$ = strcat($1, str); }
-  | float_expr ADD str_expr   { char str[511]; sprintf(str, "%g", $1); $$ = strcat(str, $3); }
+  | str_expr ADD str_expr     { $$ = strcat($1, $3); }
+  | str_expr ADD start_int_expr     { char str[511]; sprintf(str, "%d", $3); $$ = strcat($1, str); }
+  | start_int_expr ADD str_expr     { char str[511]; sprintf(str, "%d", $1); $$ = strcat(str, $3); }
+  | str_expr ADD start_float_expr   { char str[511]; sprintf(str, "%g", $3); $$ = strcat($1, str); }
+  | start_float_expr ADD str_expr   { char str[511]; sprintf(str, "%g", $1); $$ = strcat(str, $3); }
+  | SUBSTR str_expr start_int_expr start_int_expr   { char str[511]; memcpy(str, $2+$3, $4); $$ = str; }
 ;
 
 %%
