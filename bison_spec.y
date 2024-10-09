@@ -33,7 +33,7 @@
         HIG HEQ LOW LEQ EQU NEQ 
         NOT AND ORR
 
-%type <ival> int_expr int_term int_pow int_factor bool_expr
+%type <ival> int_expr int_term int_pow int_factor bool_expr bool_orr bool_and bool_not bool_term
 %type <fval> float_expr float_term float_pow float_factor
 %type <sval> str_expr
 
@@ -65,6 +65,10 @@ arit_expr:
   | ID ASSIGN float_expr  { printf("%g\n", $3); }
 ;
 
+
+
+
+
 int_expr:
     SUB int_term            { $$ = -$2; }
   | ADD int_term            { $$ = +$2; }
@@ -89,6 +93,7 @@ int_factor:
   | int_expr    { $$ = $1; }
   | '(' int_expr ')'    { $$ = $2; }
 ;
+
 
 
 
@@ -141,13 +146,7 @@ float_factor:
 ;
 
 bool_expr:
-    BOOL      { $$ = $1; }
-    | ID ASSIGN bool_expr       { $$ = $3; }
-    | '(' bool_expr ')'         { $$ = $2; }
-    | NOT bool_expr             { $$ = !$2; }
-    | bool_expr AND bool_expr   { $$ = $1 && $3; }
-    | bool_expr ORR bool_expr   { $$ = $1 || $3; }
-    | int_expr HIG int_expr     { $$ = $1 > $3; }
+      int_expr HIG int_expr     { $$ = $1 > $3; }
     | int_expr HEQ int_expr     { $$ = $1 >= $3; }
     | int_expr LOW int_expr     { $$ = $1 < $3; }
     | int_expr LEQ int_expr     { $$ = $1 <= $3; }
@@ -165,6 +164,29 @@ bool_expr:
     | float_expr LEQ int_expr   { $$ = $1 <= $3; }
     | float_expr EQU int_expr   { $$ = $1 == $3; }
     | float_expr NEQ int_expr   { $$ = $1 != $3; }
+    | bool_orr      { $$ = $1; }
+;
+
+bool_orr:
+      bool_orr  ORR bool_and   { $$ = $1 || $3; }
+    | bool_and      { $$ = $1; }
+;
+
+bool_and:
+      bool_and AND bool_not   { $$ = $1 && $3; }
+    | bool_not      { $$ = $1; }
+;
+
+bool_not:
+      NOT bool_term   { $$ = !$2; }
+    | bool_term       { $$ = $1; }
+;
+
+bool_term:
+      BOOL      { $$ = $1; }
+    | ID ASSIGN bool_expr   { $$ = $3; }
+    | bool_expr             { $$ = $1; }
+    | '(' bool_expr ')'     { $$ = $2; }
 ;
 
 str_expr:
