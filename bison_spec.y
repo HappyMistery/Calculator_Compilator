@@ -34,7 +34,7 @@
         NOT AND ORR
 
 %type <ival> int_expr int_term int_pow int_factor bool_expr
-%type <fval> float_expr float_term float_pow float_factor trig_expr
+%type <fval> float_expr float_term float_pow float_factor
 %type <sval> str_expr
 
 %start calculator
@@ -66,28 +66,28 @@ arit_expr:
 ;
 
 int_expr:
-    SUB int_term          { $$ = -$2; }
-  | ADD int_term          { $$ = +$2; }
-  | int_expr ADD int_term { $$ = $1 + $3; }
-  | int_expr SUB int_term { $$ = $1 - $3; }
-  | int_term         { $$ = $1; }
+    SUB int_term            { $$ = -$2; }
+  | ADD int_term            { $$ = +$2; }
+  | int_expr ADD int_term   { $$ = $1 + $3; }
+  | int_expr SUB int_term   { $$ = $1 - $3; }
+  | int_term            { $$ = $1; }
 ;
 
 int_term:
-    int_term MUL int_pow { $$ = $1 * $3; }
-  | int_term MOD int_pow { $$ = $1 % $3; }
-  | int_pow          { $$ = $1; } 
+    int_term MUL int_pow    { $$ = $1 * $3; }
+  | int_term MOD int_pow    { $$ = $1 % $3; }
+  | int_pow             { $$ = $1; } 
 ;
 
 int_pow:
-    int_pow POW int_factor { $$ = pow($1,$3); }
-  | int_factor    { $$ = $1; }
+    int_pow POW int_factor  { $$ = pow($1,$3); }
+  | int_factor          { $$ = $1; }
 ;
 
 int_factor:
-    INT       { $$ = $1; }
-  | int_expr  { $$ = $1; }
-  | '(' int_expr ')'  { $$ = $2; }
+    INT         { $$ = $1; }
+  | int_expr    { $$ = $1; }
+  | '(' int_expr ')'    { $$ = $2; }
 ;
 
 
@@ -98,47 +98,46 @@ float_expr:
   | ADD float_expr              { $$ = +$2; }
   | float_expr ADD float_term   { $$ = $1 + $3; }
   | int_expr ADD float_term     { $$ = $1 + $3; }
-  | float_expr ADD int_term     { $$ = $1 + $3; }
+  | float_expr ADD int_expr     { $$ = $1 + $3; }
   | float_expr SUB float_term   { $$ = $1 - $3; }
   | int_expr SUB float_term     { $$ = $1 - $3; }
-  | float_expr SUB int_term     { $$ = $1 - $3; }
+  | float_expr SUB int_expr     { $$ = $1 - $3; }
   | float_term             { $$ = $1; }
 ;
 
 float_term:
-    float_term MUL float_pow   { $$ = $1 * $3; }
-  | int_term MUL float_pow     { $$ = $1 * $3; }
-  | float_term MUL int_pow     { $$ = $1 * $3; }
-  | float_term DIV float_pow   { $$ = $1 / $3; }
-  | int_term DIV int_pow       { $$ = (float)$1 / (float)$3; }
-  | int_term DIV float_pow     { $$ = $1 / $3; }
-  | float_term DIV int_pow     { $$ = $1 / $3; }
-  | float_pow        { $$ = $1; }
+    float_term MUL float_pow    { $$ = $1 * $3; }
+  | int_expr MUL float_pow      { $$ = $1 * $3; }
+  | float_term MUL int_expr     { $$ = $1 * $3; }
+  | float_term DIV float_pow    { $$ = $1 / $3; }
+  | int_expr DIV int_expr       { $$ = (float)$1 / (float)$3; }
+  | int_expr DIV float_pow      { $$ = $1 / $3; }
+  | float_term DIV int_expr     { $$ = $1 / $3; }
+  | float_term MOD float_pow    { $$ = fmod($1, $3); }
+  | int_expr MOD float_pow      { $$ = fmod((float)$1, $3); }
+  | float_term MOD int_expr     { $$ = fmod($1, (float)$3); }
+  | float_pow             { $$ = $1; }
 ;
 
 float_pow:
-    float_pow POW float_factor   { $$ = pow($1,$3); }
-  | int_pow POW float_factor     { $$ = pow($1,$3); }
-  | float_pow POW int_factor     { $$ = pow($1,$3); }
-  | float_factor        { $$ = $1; }
+    float_pow POW float_factor  { $$ = pow($1,$3); }
+  | int_expr POW float_factor   { $$ = pow($1,$3); }
+  | float_pow POW int_expr      { $$ = pow($1,$3); }
+  | float_factor          { $$ = $1; }
 ;
 
 float_factor:
     FLOAT     { $$ = $1; }
   | PI        { $$ = PI_CONST; }
   | E         { $$ = E_CONST; }
-  | trig_expr           { $$ = $1; }
-  | float_expr          { $$ = $1; }
-  | '(' float_expr ')'  { $$ = $2; }
-;
-
-trig_expr:
-    SIN float_expr    { $$ = sin($2 * (PI_CONST / 180)); }
-  | SIN int_expr      { $$ = sin($2 * (PI_CONST / 180)); }
-  | COS float_expr    { $$ = cos($2 * (PI_CONST / 180)); }
-  | COS int_expr      { $$ = cos($2 * (PI_CONST / 180)); }
-  | TAN float_expr    { $$ = tan($2 * (PI_CONST / 180)); }
-  | TAN int_expr      { $$ = tan($2 * (PI_CONST / 180)); }
+  | SIN float_expr      { $$ = sin($2 * (PI_CONST / 180)); }
+  | SIN int_expr          { $$ = sin($2 * (PI_CONST / 180)); }
+  | COS float_expr      { $$ = cos($2 * (PI_CONST / 180)); }
+  | COS int_expr          { $$ = cos($2 * (PI_CONST / 180)); }
+  | TAN float_expr      { $$ = tan($2 * (PI_CONST / 180)); }
+  | TAN int_expr          { $$ = tan($2 * (PI_CONST / 180)); }
+  | float_expr            { $$ = $1; }
+  | '(' float_expr ')'    { $$ = $2; }
 ;
 
 bool_expr:
