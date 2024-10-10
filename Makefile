@@ -20,7 +20,9 @@ YACC_OUT = $(YACC_OUT_C) $(YACC_OUT_H)
 OBJ = *.o
 
 SRC = main.c
+SRC_INTERACTIVE = main_interactive.c
 BIN = calc_compiler.exe
+BIN_INTERACTIVE = calc_compiler_interactive.exe
 
 SRC_EXTRA = dades.c funcions.c result_validator.c
 
@@ -34,10 +36,13 @@ EG_OUT = output.txt
 
 ######################################################################
 
-all: $(BIN)
+all: $(BIN) $(BIN_INTERACTIVE)
 
 $(BIN): $(OBJ)
 	$(CC) -o $(BIN) $(CFLAGS) $(SRC) $(SRC_EXTRA) $(YACC_OUT_C) $(LEX_OUT) $(LIB)
+
+$(BIN_INTERACTIVE): $(OBJ)
+	$(CC) -o $(BIN_INTERACTIVE) $(CFLAGS) $(SRC_INTERACTIVE) $(SRC_EXTRA) $(YACC_OUT_C) $(LEX_OUT) $(LIB)
 
 $(OBJ): $(LEX_OUT) $(YACC_OUT)
 	$(CC) $(CFLAGS) -c $(LEX_OUT)
@@ -50,7 +55,7 @@ $(YACC_OUT): $(SRC_YACC)
 	$(YACC) $(YFLAGS) $(SRC_YACC)
 
 clean:
-	rm -f *~ $(BIN) $(OBJ) $(YACC_OUT) $(LEX_OUT) $(EG_OUT)
+	rm -f *~ $(BIN) $(BIN_INTERACTIVE) $(OBJ) $(YACC_OUT) $(LEX_OUT) $(EG_OUT)
 
 eg: $(EG_IN)
 	./$(BIN) $(EG_IN) $(EG_OUT)

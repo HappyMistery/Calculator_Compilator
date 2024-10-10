@@ -3,7 +3,6 @@
 #include <string.h>
 #include "dades.h"
 
-
 char *type_to_str(data_type val_type)
 {
   if (val_type == UNKNOWN_TYPE) {
@@ -33,9 +32,9 @@ char *value_info_to_str(value_info value)
   } else if (value.val_type == FLOAT_TYPE) {
     sprintf(buffer, "Float: %f", value.fval);
   } else if (value.val_type == BOOL_TYPE) {
-    return strdup("Boolean: %s", value.bval);
+    sprintf(buffer, "Boolean: %s", (value.bval == 1) ? "true" : "false");
   } else if (value.val_type == STRING_TYPE) {
-    return strdup("String: %s", value.sval);
+    sprintf(buffer, "String: %s", value.sval);
   } else {
     sprintf(buffer, "Error: incorrect value for 'value.val_type'");
   }

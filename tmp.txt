@@ -1,153 +1,97 @@
+// Basic integer operations
+7 + 3               // 10
+10 - 4              // 6
+3 * 4               // 12
+5 % 2               // 1
+2 ** 3              // 8
 
+// Complex integer operations
+(7 + 3) * 2 - 5    // 15
+(10 - 4) / 2 + 8 * 3 // 26
+3 * (4 + 2 ** 3)   // 24
+5 % 2 + 3 * 2 - 4 / 2 // 5
 
-// Basic boolean operations
-3 > 2           // true
-3 >= 3          // true
-2 < 5           // true
-3 <= 3          // true
-2 == 2          // true
-3 != 4          // true
-true && false   // false
-true || false   // true
-!true           // false
+// Basic float operations
+7.5 + 2.5          // 10.0
+10.2 - 4.1         // 6.1
+3.0 * 4.0          // 12.0
+2 / 4               // 0.5
+9.0 / 3.0          // 3.0
+8.5 % 3.0          // 2.5
+2.5 ** 2.0         // 6.25
 
-// Complex boolean operations
-(3 > 2) && (5 == 5 || 2 != 3)           // true
-!(3 <= 4 && 2 < 5) || 1 == 1            // true
-true && (false || true) && !(false)     // true
-(2+3 > 5) || (3*2 == 6) && !(5/2 > 2.5) // true
+// Complex float operations
+(7.5 + 2.5) / 2.0 - 1.5 * 3 // 0.0
+(10.2 - 4.1) * 2.0 + 1.0 / 2.0 // 12.2
+3.0 * (4.0 + 2.5 ** 2.0) // 27.5
+(8.5 % 3.2) + 4.2 * 1.5 - 3.0 / 1.5 // 8.05
 
-// Basic string operations
-"hello" + "world"          // helloworld
-"abc" + 123                // abc123
-"test" + 3.14              // test3.14
-SUBSTR("abcdef", 2, 3)     // cde
+// Basic trigonometric operations (int and float)
+sin(0)            // 0
+cos(0)            // 1
+tan(0)            // 0
+sin(PI / 4)      // 0.707107
+cos(PI / 4)      // 0.707107
+tan(PI / 4)      // 1
 
-// Complex string operations
-"hello" + " " + "world" + "!"    // hello world!
-"abc" + (123 + 456)              // abc579
-"test" + (3.14 + 7**2)           // test52.14
-SUBSTR("abcdef", 2, 3) + "xyz"   // cdexyz
+// Complex trigonometric operations (int and float)
+sin(PI / 2)      // 1
+cos(PI / 2)      // 0
+tan(PI / 2)      // undefined
+sin(PI / 3)      // 0.866025
+cos(PI / 3)      // 0.5
+tan(PI / 3)      // 1.732051
 
-// Basic trigonometric functions
-sin(30)     // 0.5
-cos(60)     // 0.5
-tan(45)     // 1.0
+// Basic mixed operations (int and float)
+7 + 2.5          // 9.5
+10 - 3.5         // 6.5
+3 * 2.0          // 6.0
+8 / 3            // 2.66667
+5 % 2.5          // 2.0
+3 ** 2.5         // 15.5885
 
-// Complex trigonometric operations
-sin(30) + cos(60) * tan(45)                 // 1.0
-(sin(45) + cos(30)) * (tan(60) - sin(90))   // 1.93185
-cos(45)**2 + sin(45)**2                     // 1.0
+// Basic mixed operations (int and trig)
+30 + sin(30)     // 30.499
+45 - cos(30)     // 44.134
+60 * tan(30)     // 34.641
 
-// Constants
-PI    // 3.14159
-E     // 2.71828
+// Basic mixed operations (float and trig)
+7.5 + sin(PI / 6) // 8.0
+10.5 - cos(PI / 4) // 9.79289
+3.5 * tan(PI / 3) // 6.06218
 
+// Complex mixed operations (int and float)
+(7 + 2.5) * 3 - 4 / 2 + 1.5 // 24.5
+10 - (3.5 * 2) + pow(8, 2) - 4 / 3.0 // 62.333
+(3 * 2.0 + pow(1.5, 2)) - 7 / 3 // 5.75
+(fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0 // 12.0
 
+// Complex mixed operations (int and trig)
+(30 + sin(30)) * 2 - 4 / 2 // 61.999
+10 - (3 * cos(30)) + 5 - 3 // 11.464
 
+// Complex mixed operations (float and trig)
+(7.5 + sin(PI / 4)) * 2 - 1.5 // 14.414
+10.2 - (3 * cos(PI / 4)) + 1.5 // 11.914
 
+// Basic constant operations (PI and E)
+PI                 // 3.14159
+E                  // 2.71828
+PI + E             // 5.85987
+PI * E             // 8.53973
 
+// Complex constant operations (PI and E)
+pow(PI, 2)        // 9.8696
+pow(E, 2)         // 7.38906
+sin(PI)           // 0
+cos(E)            // -0.91173
 
+// Basic mixed operations (int, float, trig, PI, and E)
+7 + PI            // 10.14159
+10.5 - E          // 7.78172
+8 / PI            // 2.54648
+sin(PI / 2) + 1   // 2
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-arit_expr:
-    start_int_expr      { fprintf(yyout, "%d\n", $1); }
-  | start_float_expr    { fprintf(yyout, "%g\n", $1); }
-  | ID ASSIGN int_expr    { fprintf(yyout, "%d\n", $3); }
-  | ID ASSIGN float_expr  { fprintf(yyout, "%g\n", $3); }
-;
-
-
-start_int_expr:
-    int_expr    { $$ = $1; }
-;
-
-int_expr:
-    LEN str_expr            { $$ = strlen($2); }
-  | SUB int_expr            { $$ = -$2; }
-  | ADD int_expr            { $$ = +$2; }
-  | int_expr ADD int_term   { $$ = $1 + $3; }
-  | int_expr SUB int_term   { $$ = $1 - $3; }
-  | int_term            { $$ = $1; }
-;
-
-int_term:
-    int_term MUL int_pow    { $$ = $1 * $3; }
-  | int_term MOD int_pow    { $$ = $1 % $3; }
-  | int_pow             { $$ = $1; } 
-;
-
-int_pow:
-    int_pow POW int_factor  { $$ = pow($1,$3); }
-  | int_factor          { $$ = $1; }
-;
-
-int_factor:
-    INT         { $$ = $1; }
-  | int_expr    { $$ = $1; }
-  | '(' int_expr ')'    { $$ = $2; }
-;
-
-
-start_float_expr:
-    float_expr    { $$ = $1; }
-;
-
-float_expr:  
-    SUB float_expr               { $$ = -$2; }
-  | ADD float_expr              { $$ = +$2; }
-  | float_expr ADD float_term   { $$ = $1 + $3; }
-  | start_int_expr ADD float_term     { $$ = $1 + $3; }
-  | float_expr ADD start_int_expr     { $$ = $1 + $3; }
-  | float_expr SUB float_term   { $$ = $1 - $3; }
-  | start_int_expr SUB float_term     { $$ = $1 - $3; }
-  | float_expr SUB start_int_expr     { $$ = $1 - $3; }
-  | float_term             { $$ = $1; }
-;
-
-float_term:
-    float_term MUL float_pow    { $$ = $1 * $3; }
-  | start_int_expr MUL float_pow      { $$ = $1 * $3; }
-  | float_term MUL start_int_expr     { $$ = $1 * $3; }
-  | float_term DIV float_pow    { $$ = $1 / $3; }
-  | start_int_expr DIV start_int_expr       { $$ = (float)$1 / (float)$3; }
-  | start_int_expr DIV float_pow      { $$ = $1 / $3; }
-  | float_term DIV start_int_expr     { $$ = $1 / $3; }
-  | float_term MOD float_pow    { $$ = fmod($1, $3); }
-  | start_int_expr MOD float_pow      { $$ = fmod((float)$1, $3); }
-  | float_term MOD start_int_expr     { $$ = fmod($1, (float)$3); }
-  | float_pow             { $$ = $1; }
-;
-
-float_pow:
-    float_pow POW float_factor  { $$ = pow($1,$3); }
-  | start_int_expr POW float_factor   { $$ = pow($1,$3); }
-  | float_pow POW start_int_expr      { $$ = pow($1,$3); }
-  | float_factor          { $$ = $1; }
-;
-
-float_factor:
-    FLOAT     { $$ = $1; }
-  | PI        { $$ = PI_CONST; }
-  | E         { $$ = E_CONST; }
-  | SIN float_expr      { $$ = sin($2 * (PI_CONST / 180)); }
-  | SIN start_int_expr  { $$ = sin($2 * (PI_CONST / 180)); }
-  | COS float_expr      { $$ = cos($2 * (PI_CONST / 180)); }
-  | COS start_int_expr  { $$ = cos($2 * (PI_CONST / 180)); }
-  | TAN float_expr      { $$ = tan($2 * (PI_CONST / 180)); }
-  | TAN start_int_expr  { $$ = tan($2 * (PI_CONST / 180)); }
-  | float_expr          { $$ = $1; }
-  | '(' float_expr ')'  { $$ = $2; }
-;
+// Complex mixed operations (int, float, trig, PI, and E)
+(7 + E) * 3 - sin(PI) // 20.155
+10 - (3.5 * PI) + pow(E, 2) - 4 / 3.0 // 1.080
