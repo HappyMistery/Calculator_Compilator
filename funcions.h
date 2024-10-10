@@ -10,7 +10,7 @@ int end_analisi_sintactica(void);
 
 int analisi_semantica(void);
 
-void yyerror(char *explanation);
+void yyerror(const char *explanation);
 
 
 #endif

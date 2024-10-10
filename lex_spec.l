@@ -3,6 +3,7 @@
 /***************************************************/
 %{
     #include "bison_spec.tab.h"
+    #include "funcions.h"
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
@@ -10,7 +11,7 @@
     #include <unistd.h>
     #include <math.h>
 
-    void yyerror(char *s);
+    void yyerror(const char *s);
     #ifndef strdup
     char* strdup(const char* s) {
         char* copy = malloc(strlen(s) + 1);
@@ -21,6 +22,11 @@
     }
     #endif
 %}
+
+%option yylineno
+%option noyywrap
+%option noinput
+%option nounput
 
 /******************* DEFINITIONS *******************/
 INT [0-9]+
@@ -60,8 +66,14 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
             }
 {BOOL}      { yylval.ival = (strcmp(yytext, "true") == 0) ? 1 : 0; return BOOL; }
 
-{ID}        { yylval.sval = (char *) strdup(yytext); return ID; }
-{COMM}      { return COMM; }
+{ID}        {
+                yylval.id.lexema = strdup(yytext);
+                yylval.id.lenght = yyleng;
+                yylval.id.line = yylineno;
+                yylval.id.id_val.val_type = UNKNOWN_TYPE;
+                return ID;
+            }
+{COMM}      {}
 
 ":="        { return ASSIGN; }
 
@@ -82,7 +94,7 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 "("         { return '('; }
 ")"         { return ')'; }
 
-\n          { return '\n'; }
+\n          { return ENDLINE; }
 [ \t\r]+    { /* Ignore whitespace */ }
 
 .           { printf("UNKNOWN: %s\n", yytext); }

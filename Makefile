@@ -22,7 +22,7 @@ OBJ = *.o
 SRC = main.c
 BIN = calc_compiler.exe
 
-SRC_EXTRA = dades.c funcions.c
+SRC_EXTRA = dades.c funcions.c result_validator.c
 
 LFLAGS = -n -o $*.c
 YFLAGS = -d -v

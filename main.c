@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "funcions.h"
+#include "result_validator.h"
 
 
 int main(int argc, char *argv[])
@@ -41,5 +42,6 @@ int main(int argc, char *argv[])
   } else {
     printf("\nUsage: %s INPUT_FILE OUTPUT_FILE\n",argv[0]);
   }
+  error = validate_results(argv[2]);
   return EXIT_SUCCESS;
 }

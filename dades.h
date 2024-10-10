@@ -7,14 +7,18 @@
 typedef enum {
   UNKNOWN_TYPE = 1,
   INT_TYPE,
-  FLOAT_TYPE
+  FLOAT_TYPE,
+  BOOL_TYPE,
+  STRING_TYPE
 } data_type;
 
 
 typedef struct {
   data_type val_type;
-  int val_int;
-  float val_float;
+  int ival;
+  float fval;
+  char* sval;
+  int bval;
 } value_info;
 
 
