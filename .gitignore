@@ -1,11 +1,5 @@
 calc_compiler.exe
-*.h
-*.c
 *.o
 bison_spec.output
-!symtab.c
-!symtab.h
-!dades.*
-!funcions.*
-!result_validator.c
-!main.c
+bison_spec.tab.*
+lex.*
