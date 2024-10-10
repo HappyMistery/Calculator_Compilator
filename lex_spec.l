@@ -25,6 +25,7 @@
     int fileno(FILE *stream);
 %}
 
+%option header-file="lex.yy.h"
 %option yylineno
 %option noyywrap
 %option noinput

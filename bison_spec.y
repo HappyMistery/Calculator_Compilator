@@ -159,12 +159,12 @@ arit_trig:
     SIN arit_factor       { 
                           cast_vals_to_flt(&$2, NULL);
                           $$.val_type = FLOAT_TYPE; 
-                          $$.fval = sin($2.ival);
+                          $$.fval = sin($2.fval);
                         }
   | COS arit_factor       { 
                           cast_vals_to_flt(&$2, NULL); 
                           $$.val_type = FLOAT_TYPE; 
-                          if(cos($2.fval) < 0.00000000001) $$.fval = 0;
+                          if(cos($2.fval) < 0.00000000001 && cos($2.fval) > -0.00000000001) $$.fval = 0;
                           else $$.fval = cos($2.fval);
                         }
   | TAN arit_factor       { 

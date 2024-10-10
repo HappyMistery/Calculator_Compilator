@@ -1,5 +1,6 @@
-calc_compiler.exe
+calc_compiler*
 *.o
 bison_spec.output
 bison_spec.tab.*
 lex.*
+output.txt
