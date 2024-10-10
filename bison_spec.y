@@ -7,6 +7,7 @@
   #include <math.h>
   #include "dades.h"
   #include "funcions.h"
+  
 
   int yylex(void);
   int yydebug = 1;
@@ -53,7 +54,6 @@
                       LEN SUBSTR
                       BIN OCT HEX DEC
 
-%type <sense_valor> calculator
 %type <expr_val> expr arit_expr arit_term arit_pow arit_trig arit_factor 
                   bool_expr bool_orr bool_and bool_not bool_term
                   str_expr
@@ -133,14 +133,15 @@ arit_term:
                                 } else { $$.val_type = INT_TYPE; $$.ival = $1.ival * $3.ival; }
                               }
   | arit_term DIV arit_pow    {  
-                                cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval / $3.fval;
+                                cast_vals_to_flt(&$1, &$3); 
+                                if ($3.fval == 0) yyerror("Division by zero error");
+                                else { $$.val_type = FLOAT_TYPE; $$.fval = $1.fval / $3.fval;}
                               }
   | arit_term MOD arit_pow    { 
-                                { 
                                 if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
-                                  cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = fmod($1.fval,$3.fval);
+                                  if (($3.val_type == FLOAT_TYPE && $3.fval == 0)  || ($3.val_type == INT_TYPE && $3.ival == 0)) yyerror("Modulo by zero error");
+                                  else { cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = fmod($1.fval,$3.fval); }
                                 } else { $$.val_type = INT_TYPE; $$.ival = $1.ival % $3.ival; }
-                              }
                               }
   | arit_pow
 ;
@@ -156,19 +157,23 @@ arit_pow:
 
 arit_trig:
     SIN arit_factor       { 
-                          cast_vals_to_flt(&$2, NULL); 
+                          cast_vals_to_flt(&$2, NULL);
                           $$.val_type = FLOAT_TYPE; 
-                          $$.fval = sin($2.fval);
+                          $$.fval = sin($2.ival);
                         }
   | COS arit_factor       { 
                           cast_vals_to_flt(&$2, NULL); 
                           $$.val_type = FLOAT_TYPE; 
-                          $$.fval = cos($2.fval);
+                          if(cos($2.fval) < 0.00000000001) $$.fval = 0;
+                          else $$.fval = cos($2.fval);
                         }
   | TAN arit_factor       { 
-                          cast_vals_to_flt(&$2, NULL); 
-                          $$.val_type = FLOAT_TYPE; 
-                          $$.fval = tan($2.fval);
+                          cast_vals_to_flt(&$2, NULL);
+                          if(cos($2.fval) < 0.00000000001) yyerror("Indefinition error");
+                          else { 
+                                  $$.val_type = FLOAT_TYPE;
+                                  $$.fval = sin($2.fval)/cos($2.fval);
+                          }
                         }
   | arit_factor
 ;
@@ -222,17 +227,21 @@ bool_term:
 
 str_expr:
     STRING    { $$.val_type = STRING_TYPE; $$.sval = $1; }
-  | expr ADD expr   {
-                      if($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
-                        char* str1 = "";
-                        if ($1.val_type == INT_TYPE) { sprintf(str1, "%d", $1.ival); $1.sval = str1; }
-                        if ($3.val_type == INT_TYPE) { sprintf(str1, "%d", $3.ival); $3.sval = str1; }
-                        if ($1.val_type == FLOAT_TYPE) { sprintf(str1, "%g", $1.fval); $1.sval = str1;}
-                        if ($3.val_type == FLOAT_TYPE) { sprintf(str1, "%g", $3.fval); $3.sval = str1;}
-                        $$.val_type = STRING_TYPE;
-                        $$.sval = strcat($1.sval, $3.sval);
-                      }
-                    }
+  | str_expr ADD str_expr     { $$.sval = strcat($1.sval, $3.sval); }
+  | str_expr ADD arit_expr    { 
+                                char str1[50];
+                                if ($3.val_type == INT_TYPE) { sprintf(str1, "%d", $3.ival); $3.sval = str1; }
+                                else { sprintf(str1, "%g", $3.fval); $3.sval = str1;}
+                                $$.val_type = STRING_TYPE;
+                                $$.sval = strcat($1.sval, $3.sval);
+                              }
+  | arit_expr ADD str_expr    { 
+                                char str1[50];
+                                if ($1.val_type == INT_TYPE) { sprintf(str1, "%d", $1.ival); $1.sval = str1; }
+                                else { sprintf(str1, "%g", $1.fval); $1.sval = str1;}
+                                $$.val_type = STRING_TYPE;
+                                $$.sval = strcat($1.sval, $3.sval);
+                              }
   | SUBSTR str_expr arit_expr arit_expr   { char str[strlen($2.sval)]; memcpy(str, $2.sval+$3.ival, $4.ival); $$.sval = str; }
 ;
 

@@ -21,6 +21,8 @@
         return copy;
     }
     #endif
+
+    int fileno(FILE *stream);
 %}
 
 %option yylineno

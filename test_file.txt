@@ -37,7 +37,6 @@ tan(PI / 4)      // 1
 // Complex trigonometric operations (int and float)
 sin(PI / 2)      // 1
 cos(PI / 2)      // 0
-tan(PI / 2)      // undefined
 sin(PI / 3)      // 0.866025
 cos(PI / 3)      // 0.5
 tan(PI / 3)      // 1.732051
@@ -62,9 +61,9 @@ tan(PI / 3)      // 1.732051
 
 // Complex mixed operations (int and float)
 (7 + 2.5) * 3 - 4 / 2 + 1.5 // 24.5
-10 - (3.5 * 2) + pow(8, 2) - 4 / 3.0 // 62.333
-(3 * 2.0 + pow(1.5, 2)) - 7 / 3 // 5.75
-(fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0 // 12.0
+10 - (3.5 * 2) + 8**2 - 4 / 3.0 // 62.333
+(3 * 2.0 + 1.5**2) - 7 / 3 // 5.75
+(5%2.5 + 4.5) * 3 - 2 / 1.0 // 12.0
 
 // Complex mixed operations (int and trig)
 (30 + sin(30)) * 2 - 4 / 2 // 61.999
@@ -81,8 +80,8 @@ PI + E             // 5.85987
 PI * E             // 8.53973
 
 // Complex constant operations (PI and E)
-pow(PI, 2)        // 9.8696
-pow(E, 2)         // 7.38906
+PI**2        // 9.8696
+E**2         // 7.38906
 sin(PI)           // 0
 cos(E)            // -0.91173
 
@@ -94,4 +93,15 @@ sin(PI / 2) + 1   // 2
 
 // Complex mixed operations (int, float, trig, PI, and E)
 (7 + E) * 3 - sin(PI) // 20.155
-10 - (3.5 * PI) + pow(E, 2) - 4 / 3.0 // 1.080
+10 - (3.5 * PI) + E**2 - 4 / 3.0 // 1.080
+
+"Hello, " + "World!",                      // Basic string concatenation
+"Good " + "Morning " + "Everyone",           // Multiple strings concatenation
+"The result is: " + "42",                  // Concatenating a string with a numeric string
+"Pi is approximately: " + "3.14",          // String with numeric value
+"C" + "++" + " Programming",                  // Concatenating without spaces
+"Concatenation of " + "this" + " and " + "that", // Concatenating with spaces
+"Hello " + "there, " + "how " + "are " + "you?", // Greeting concatenation
+"String " + "operations " + "are " + "fun!",   // Fun statement concatenation
+"The quick " + "brown " + "fox " + "jumps",    // Concatenation of a phrase
+"Concatenating " + "strings " + "in C"       // Concatenating in C

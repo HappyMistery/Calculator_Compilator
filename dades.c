@@ -3,6 +3,8 @@
 #include <string.h>
 #include "dades.h"
 
+char* strdup(const char* s);
+
 char *type_to_str(data_type val_type)
 {
   if (val_type == UNKNOWN_TYPE) {
