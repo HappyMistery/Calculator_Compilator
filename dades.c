@@ -10,13 +10,13 @@ char *type_to_str(data_type val_type)
   if (val_type == UNKNOWN_TYPE) {
     return strdup("Unknown type");
   } else if (val_type == INT_TYPE) {
-    return strdup("Int");
+    return strdup("Integer");
   } else if (val_type == FLOAT_TYPE) {
     return strdup("Float");
   } else if (val_type == BOOL_TYPE) {
-    return strdup("Bool");
+    return strdup("Boolean");
   } else if (val_type == STRING_TYPE) {
-    return strdup("Str");
+    return strdup("String");
   } else {
     return strdup("Error: incorrect value for 'val_type'");
   }

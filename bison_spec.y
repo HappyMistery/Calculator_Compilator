@@ -55,7 +55,7 @@
                       BIN OCT HEX DEC
                       OP CP
 
-%type <expr_val> expr arit_expr arit_term arit_pow arit_trig arit_factor 
+%type <expr_val> stmnt expr mult_expr exp_expr trig_expr term_expr
                   bool_expr bool_orr bool_and bool_not bool_term
                   str_expr
 
@@ -68,110 +68,170 @@ calculator:
 ;
 
 stmnt_list:
-   expr ENDLINE stmnt_list
+   stmnt ENDLINE stmnt_list
   | ENDLINE stmnt_list
   | /* empty */               { /* Allow empty input */ }
 ;
 
+stmnt:
+    ID ASSIGN expr  { 
+                      $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
+                      if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
+                        printf("[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival); 
+                        fprintf(yyout, "%d\n", $3.ival);
+                        $$.val_type = INT_TYPE; 
+                        $$.ival = $3.ival; 
+                      }
+                      else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
+                        printf("[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval); 
+                        fprintf(yyout, "%g\n", $3.fval);
+                        $$.val_type = FLOAT_TYPE;
+                        $$.fval = $3.fval;
+                      }
+                      else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
+                        printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false");
+                        fprintf(yyout, "%d\n", $3.bval);
+                        $$.val_type = BOOL_TYPE; $$.bval = $3.bval;
+                      }
+                      else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
+                        printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval); 
+                        fprintf(yyout, "%s\n", $3.sval);
+                        $$.val_type = STRING_TYPE; $$.sval = $3.sval;
+                      }
+                    }
+  | expr  {
+            if ($$.val_type == INT_TYPE) fprintf(yyout, "[Integer] %d\n", $1.ival);
+            else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "[Float] %g\n", $1.fval);
+            else if ($$.val_type == BOOL_TYPE) fprintf(yyout, "[Bool] %s\n", ($1.bval == 1) ? "true" : "false");
+            else if ($$.val_type == STRING_TYPE) fprintf(yyout, "[String] %s\n", $1.sval);
+          }
+;
+
 expr:
-    arit_expr   { 
-                  if ($$.val_type == INT_TYPE) fprintf(yyout, "[%s] %d\n", type_to_str($1.val_type), $1.ival);
-                  else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "[%s] %g\n", type_to_str($1.val_type), $1.fval);
-                }
-  | bool_expr   { $$.val_type = BOOL_TYPE; fprintf(yyout, "[Bool] %s\n", ($1.bval == 1) ? "true" : "false"); }
-  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "[Str] %s\n", $1.sval); }
-  | ID ASSIGN arit_expr   { 
-                            $1.id_val.val_type = $3.val_type;
-                            if ($3.val_type == INT_TYPE) {
-                              printf("[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival); fprintf(yyout, "%d\n", $3.ival);
-                              $$.val_type = INT_TYPE; 
-                              $$.ival = $3.ival; 
+    LEN OP mult_expr CP { /* Can only use LEN() with a string */
+                          if ($3.val_type == STRING_TYPE) {  $$.val_type = INT_TYPE; $$.ival = strlen($3.sval); }
+                          else yyerror("Length (LEN()) cannot be applied to type '%s'. Only type 'String'", type_to_str($2.val_type));
+                        }
+  | SUB mult_expr       { /* Can only use Unary Minus Operator (-) with a number */
+                          if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = -$2.ival; }
+                          else if ($2.val_type == FLOAT_TYPE) { $$.val_type = FLOAT_TYPE; $$.fval = -$2.fval; }
+                          else yyerror("Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type));
+                        }
+  | ADD mult_expr       { /* Can only use Unary Plus Operator (+) with a number */
+                          if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = +$2.ival; }
+                          else if ($2.val_type == FLOAT_TYPE) { $$.val_type = FLOAT_TYPE; $$.fval = +$2.fval; }
+                          else yyerror("Unary Plus Operator (+) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type));
+                        }
+  | expr ADD mult_expr  { /* If any one of the operands is a string, concatenate */
+                          if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
+                            char str[25];
+                            cast_vals_to_flt(&$1, &$3);
+                            $$.val_type = STRING_TYPE;
+                            if ($1.val_type == STRING_TYPE) { /* If 1st operand is a string, then 2nd is any other type */
+                              if ($3.val_type == STRING_TYPE) $$.sval = strcat($1.sval, $3.sval); /* If both operands are a string, concatenate them */
+                              else if ($3.val_type == BOOL_TYPE) $$.sval = strcat($1.sval, ($3.bval == 1) ? "true" : "false"); /* Can concatenate booleans */
+                              else {  /* If it's not a boolean, concatenate a number */
+                                sprintf(str, "%g", $3.fval);
+                                $$.sval = strcat($1.sval, str); 
+                              }
                             }
-                            else { 
-                              printf("[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval); fprintf(yyout, "%g\n", $3.fval);
-                              $$.val_type = FLOAT_TYPE;
-                              $$.fval = $3.fval;
+                            else {  /* If 2nd operand is a string, then 1st is any other type */
+                              if ($1.val_type == BOOL_TYPE) $$.sval = strcat(($1.bval == 1) ? "true" : "false", $3.sval); /* Can concatenate booleans */
+                              else {  /* If it's not a boolean, concatenate a number */
+                                sprintf(str, "%g", $1.fval);
+                                $$.sval = strcat(str, $3.sval);
+                              }
                             }
                           }
-  | ID ASSIGN bool_expr   { 
-                            $1.id_val.val_type = $3.val_type;
-                            printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false"); fprintf(yyout, "%d\n", $3.bval);
-                            $$.val_type = BOOL_TYPE; $$.bval = $3.bval;
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) yyerror("Addition (+) operator cannot be applied to type 'Boolean'");
+                          if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
+                            cast_vals_to_flt(&$1, &$3); 
+                            $$.val_type = FLOAT_TYPE; 
+                            $$.fval = $1.fval + $3.fval;
+                          } else { 
+                            $$.val_type = INT_TYPE; 
+                            $$.ival = $1.ival + $3.ival; 
                           }
-  | ID ASSIGN str_expr    { 
-                            $1.id_val.val_type = $3.val_type;
-                            printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval); fprintf(yyout, "%s\n", $3.sval);
-                            $$.val_type = STRING_TYPE; $$.sval = $3.sval;
+                        }
+  | expr SUB mult_expr  { 
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) yyerror("Subtraction (-) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) yyerror("Subtraction (-) operator cannot be applied to type 'String'");
+                          else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
+                            cast_vals_to_flt(&$1, &$3); 
+                            $$.val_type = FLOAT_TYPE; 
+                            $$.fval = $1.fval - $3.fval;
+                          } else { 
+                            $$.val_type = INT_TYPE; 
+                            $$.ival = $1.ival - $3.ival; 
                           }
+                        }
+  | mult_expr
 ;
 
 
-arit_expr:
-    LEN OP str_expr CP      { $$.val_type = INT_TYPE; $$.ival = strlen($3.sval); }
-  | SUB arit_term             { 
-                                if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = -$2.ival; }
-                                else { $$.val_type = FLOAT_TYPE; $$.fval = -$2.fval; }
+mult_expr:
+    mult_expr MUL exp_expr    { 
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) yyerror("Multiplication (*) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) yyerror("Multiplication (*) operator cannot be applied to type 'String'");
+                                else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
+                                  cast_vals_to_flt(&$1, &$3); 
+                                  $$.val_type = FLOAT_TYPE; 
+                                  $$.fval = $1.fval * $3.fval;
+                                } else { 
+                                  $$.val_type = INT_TYPE; 
+                                  $$.ival = $1.ival * $3.ival; 
+                                }
                               }
-  | ADD arit_term             { 
-                                if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = +$2.ival; }
-                                else { $$.val_type = FLOAT_TYPE; $$.fval = +$2.fval; }
-                              }
-  | arit_expr ADD arit_term   { 
-                                if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
-                                  cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval + $3.fval;
-                                } else { $$.val_type = INT_TYPE; $$.ival = $1.ival + $3.ival; }
-                              }
-  | arit_expr SUB arit_term   { 
-                                if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
-                                  cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval - $3.fval;
-                                } else { $$.val_type = INT_TYPE; $$.ival = $1.ival - $3.ival; }
-                              }
-  | arit_term
-;
-
-arit_term:
-    arit_term MUL arit_pow    { 
-                                if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
-                                  cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval * $3.fval;
-                                } else { $$.val_type = INT_TYPE; $$.ival = $1.ival * $3.ival; }
-                              }
-  | arit_term DIV arit_pow    {  
+  | mult_expr DIV exp_expr    {  
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) yyerror("Division (/) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) yyerror("Division (/) operator cannot be applied to type 'String'");
                                 cast_vals_to_flt(&$1, &$3); 
-                                if ($3.fval == 0) yyerror("Division by zero error");
-                                else { $$.val_type = FLOAT_TYPE; $$.fval = $1.fval / $3.fval;}
+                                if ($3.fval < 0.000001 && $3.fval > -0.000001) yyerror("Division by zero");
+                                else { 
+                                  $$.val_type = FLOAT_TYPE; 
+                                  $$.fval = $1.fval / $3.fval;}
                               }
-  | arit_term MOD arit_pow    { 
+  | mult_expr MOD exp_expr    { 
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) yyerror("Modulo (%) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) yyerror("Modulo (%) operator cannot be applied to type 'String'");
                                 if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
-                                  if (($3.val_type == FLOAT_TYPE && $3.fval == 0)  || ($3.val_type == INT_TYPE && $3.ival == 0)) yyerror("Modulo by zero error");
-                                  else { cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = fmod($1.fval,$3.fval); }
-                                } else { $$.val_type = INT_TYPE; $$.ival = $1.ival % $3.ival; }
+                                  if (($3.val_type == FLOAT_TYPE && ($3.fval < 0.000001 && $3.fval > -0.000001))  || ($3.val_type == INT_TYPE && $3.ival == 0)) yyerror("Modulo by zero");
+                                  else { 
+                                    cast_vals_to_flt(&$1, &$3); 
+                                    $$.val_type = FLOAT_TYPE; 
+                                    $$.fval = fmod($1.fval,$3.fval); 
+                                  }
+                                } else { 
+                                  $$.val_type = INT_TYPE; 
+                                  $$.ival = $1.ival % $3.ival; 
+                                }
                               }
-  | arit_pow
+  | exp_expr
 ;
 
-arit_pow:
-    arit_trig POW arit_pow  { 
+exp_expr:
+    trig_expr POW exp_expr  { 
                               if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
                                 cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = pow($1.fval,$3.fval);
                               } else { $$.val_type = INT_TYPE; $$.ival = pow($1.ival,$3.ival); }
                             }
-  | arit_trig
+  | trig_expr
 ;
 
-arit_trig:
-    SIN arit_factor     { 
+trig_expr:
+    SIN term_expr     { 
                           cast_vals_to_flt(&$2, NULL);
                           $$.val_type = FLOAT_TYPE; 
                           if(sin($2.fval) < 0.000001 && sin($2.fval) > -0.000001) $$.fval = 0;
                           else $$.fval = sin($2.fval);
                         }
-  | COS arit_factor     { 
+  | COS term_expr     { 
                           cast_vals_to_flt(&$2, NULL); 
                           $$.val_type = FLOAT_TYPE; 
                           if(cos($2.fval) < 0.000001 && cos($2.fval) > -0.000001) $$.fval = 0;
                           else $$.fval = cos($2.fval);
                         }
-  | TAN arit_factor     { 
+  | TAN term_expr     { 
                           cast_vals_to_flt(&$2, NULL);
                           if(cos($2.fval) < 0.000001) yyerror("Indefinition error");
                           else { 
@@ -179,12 +239,14 @@ arit_trig:
                                   $$.fval = sin($2.fval)/cos($2.fval);
                           }
                         }
-  | arit_factor
+  | term_expr
 ;
 
-arit_factor:
+term_expr:
     INT         { $$.val_type = INT_TYPE; $$.ival = $1; }
   | FLOAT       { $$.val_type = FLOAT_TYPE; $$.fval = $1; }
+  | BOOL        { $$.val_type = BOOL_TYPE; $$.bval = $1; }      
+  | STRING      { $$.val_type = STRING_TYPE; $$.sval = $1; }
   | PI          { $$.val_type = FLOAT_TYPE; $$.fval = PI_CONST; }
   | E           { $$.val_type = FLOAT_TYPE; $$.fval = E_CONST; }
   | OP arit_expr CP   { 

@@ -12,7 +12,7 @@ char* result_to_string(char* type, double res) {
     char* final_str = (char*)malloc(50 * sizeof(char));
     sprintf(tmp_str, "%g", res);
     if(strcmp(type, "int") == 0) {
-        strcpy(final_str, "[Int] ");
+        strcpy(final_str, "[Integer] ");
     }
     else {
         strcpy(final_str, "[Float] ");
@@ -93,35 +93,35 @@ int validate_results(const char *output_file) {
         const char* input;
         const char* output;
     } string_test[] = {
-        {"\"Hello, \" + \"World!\"", "[Str] Hello, World!"},                      
-        {"\"Good \" + \"Morning \" + \"Everyone\"", "[Str] Good Morning Everyone"},
-        {"\"The result is: \" + \"42\"", "[Str] The result is: 42"},
-        {"\"Pi is approximately: \" + \"3.14\"", "[Str] Pi is approximately: 3.14"},          
-        {"\"C\" + \"++\" + \" Programming\"", "[Str] C++ Programming"},
-        {"\"Concatenation of \" + \"this\" + \" and \" + \"that\"", "[Str] Concatenation of this and that"},
-        {"\"Hello \" + \"there, \" + \"how \" + \"are \" + \"you?\"", "[Str] Hello there, how are you?"},
-        {"\"String \" + \"operations \" + \"are \" + \"fun!\"", "[Str] String operations are fun!"},
-        {"\"The quick \" + \"brown \" + \"fox \" + \"jumps\"", "[Str] The quick brown fox jumps"},
-        {"\"Concatenating \" + \"strings \" + \"in C\"", "[Str] Concatenating strings in C"},
+        {"\"Hello, \" + \"World!\"", "[String] Hello, World!"},                      
+        {"\"Good \" + \"Morning \" + \"Everyone\"", "[String] Good Morning Everyone"},
+        {"\"The result is: \" + \"42\"", "[String] The result is: 42"},
+        {"\"Pi is approximately: \" + \"3.14\"", "[String] Pi is approximately: 3.14"},          
+        {"\"C\" + \"++\" + \" Programming\"", "[String] C++ Programming"},
+        {"\"Concatenation of \" + \"this\" + \" and \" + \"that\"", "[String] Concatenation of this and that"},
+        {"\"Hello \" + \"there, \" + \"how \" + \"are \" + \"you?\"", "[String] Hello there, how are you?"},
+        {"\"String \" + \"operations \" + \"are \" + \"fun!\"", "[String] String operations are fun!"},
+        {"\"The quick \" + \"brown \" + \"fox \" + \"jumps\"", "[String] The quick brown fox jumps"},
+        {"\"Concatenating \" + \"strings \" + \"in C\"", "[String] Concatenating strings in C"},
     };
 
     const struct {
     const char* input;
     const char* output;
 } boolean_test[] = {
-    {"true", "[Bool] true"},
-    {"true and true", "[Bool] true"},
-    {"false or false", "[Bool] false"},
-    {"not false", "[Bool] true"},
-    {"PI > 4", "[Bool] false"},
-    {"1*0 == 0", "[Bool] true"},
-    {"5 % 2 + 3 * 2 - 4 / 2 >= 5", "[Bool] true"},
-    {"sin(PI / 2) + 1 < 2", "[Bool] false"},
-    {"1.5 <= 1.5002", "[Bool] true"},
-    {"true and not true or not true", "[Bool] false"},
-    {"cos(0) <> 1", "[Bool] false"},
-    {"(3 > 1.75) and true or false", "[Bool] true"},
-    {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Bool] true"},
+    {"true", "[Boolean] true"},
+    {"true and true", "[Boolean] true"},
+    {"false or false", "[Boolean] false"},
+    {"not false", "[Boolean] true"},
+    {"PI > 4", "[Boolean] false"},
+    {"1*0 == 0", "[Boolean] true"},
+    {"5 % 2 + 3 * 2 - 4 / 2 >= 5", "[Boolean] true"},
+    {"sin(PI / 2) + 1 < 2", "[Boolean] false"},
+    {"1.5 <= 1.5002", "[Boolean] true"},
+    {"true and not true or not true", "[Boolean] false"},
+    {"cos(0) <> 1", "[Boolean] false"},
+    {"(3 > 1.75) and true or false", "[Boolean] true"},
+    {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
 };
 
     int total_results = sizeof(arit_test) / sizeof(arit_test[0]);
