@@ -69,35 +69,37 @@ calculator:
 stmnt_list:
    expr ENDLINE stmnt_list
   | ENDLINE stmnt_list
-  | expr ENDLINE
   | /* empty */               { /* Allow empty input */ }
 ;
 
 expr:
     arit_expr   { 
-                  if ($$.val_type == INT_TYPE) fprintf(yyout, "%d\n", $1.ival);
-                  else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "%g\n", $1.fval);
+                  if ($$.val_type == INT_TYPE) fprintf(yyout, "[%s] %d\n", type_to_str($1.val_type), $1.ival);
+                  else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "[%s] %g\n", type_to_str($1.val_type), $1.fval);
                 }
-  | bool_expr   { $$.val_type = BOOL_TYPE; fprintf(yyout, "%s\n", ($1.bval == 1) ? "true" : "false"); }
-  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "%s\n", $1.sval); }
+  | bool_expr   { $$.val_type = BOOL_TYPE; fprintf(yyout, "[%s] %s\n", type_to_str($1.val_type), ($1.bval == 1) ? "true" : "false"); }
+  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "[%s] %s\n", type_to_str($1.val_type), $1.sval); }
   | ID ASSIGN arit_expr   { 
-                            if ($3.val_type == INT_TYPE) { 
-                              printf("ID: %s pren per valor: %d\n", $1.lexema, $3.ival); fprintf(yyout, "%d\n", $3.ival);
+                            $1.id_val.val_type = $3.val_type;
+                            if ($3.val_type == INT_TYPE) {
+                              printf("[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival); fprintf(yyout, "%d\n", $3.ival);
                               $$.val_type = INT_TYPE; 
                               $$.ival = $3.ival; 
                             }
                             else { 
-                              printf("ID: %s pren per valor: %g\n", $1.lexema, $3.fval); fprintf(yyout, "%g\n", $3.fval);
+                              printf("[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval); fprintf(yyout, "%g\n", $3.fval);
                               $$.val_type = FLOAT_TYPE;
-                              $$.ival = $3.ival;
+                              $$.fval = $3.fval;
                             }
                           }
   | ID ASSIGN bool_expr   { 
-                            printf("ID: %s pren per valor: %s\n", $1.lexema, ($3.bval == 1) ? "true" : "false"); fprintf(yyout, "%d\n", $3.bval);
+                            $1.id_val.val_type = $3.val_type;
+                            printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false"); fprintf(yyout, "%d\n", $3.bval);
                             $$.val_type = BOOL_TYPE; $$.bval = $3.bval;
                           }
   | ID ASSIGN str_expr    { 
-                            printf("ID: %s pren per valor: %s\n", $1.lexema, $3.sval); fprintf(yyout, "%s\n", $3.sval);
+                            $1.id_val.val_type = $3.val_type;
+                            printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval); fprintf(yyout, "%s\n", $3.sval);
                             $$.val_type = STRING_TYPE; $$.sval = $3.sval;
                           }
 ;
@@ -105,11 +107,11 @@ expr:
 
 arit_expr:
     LEN str_expr              { $$.val_type = INT_TYPE; $$.ival = strlen($2.sval); }
-  | SUB arit_expr             { 
+  | SUB arit_term             { 
                                 if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = -$2.ival; }
                                 else { $$.val_type = FLOAT_TYPE; $$.fval = -$2.fval; }
                               }
-  | ADD arit_expr             { 
+  | ADD arit_term             { 
                                 if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = +$2.ival; }
                                 else { $$.val_type = FLOAT_TYPE; $$.fval = +$2.fval; }
                               }
@@ -148,28 +150,29 @@ arit_term:
 
 arit_pow:
     arit_trig POW arit_pow  { 
-                                if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
-                                  cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = pow($1.fval,$3.fval);
-                                } else { $$.val_type = INT_TYPE; $$.ival = pow($1.ival,$3.ival); }
-                              }
+                              if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { 
+                                cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = pow($1.fval,$3.fval);
+                              } else { $$.val_type = INT_TYPE; $$.ival = pow($1.ival,$3.ival); }
+                            }
   | arit_trig
 ;
 
 arit_trig:
-    SIN arit_factor       { 
+    SIN arit_factor     { 
                           cast_vals_to_flt(&$2, NULL);
                           $$.val_type = FLOAT_TYPE; 
-                          $$.fval = sin($2.fval);
+                          if(sin($2.fval) < 0.000001 && sin($2.fval) > -0.000001) $$.fval = 0;
+                          else $$.fval = sin($2.fval);
                         }
-  | COS arit_factor       { 
+  | COS arit_factor     { 
                           cast_vals_to_flt(&$2, NULL); 
                           $$.val_type = FLOAT_TYPE; 
-                          if(cos($2.fval) < 0.00000000001 && cos($2.fval) > -0.00000000001) $$.fval = 0;
+                          if(cos($2.fval) < 0.000001 && cos($2.fval) > -0.000001) $$.fval = 0;
                           else $$.fval = cos($2.fval);
                         }
-  | TAN arit_factor       { 
+  | TAN arit_factor     { 
                           cast_vals_to_flt(&$2, NULL);
-                          if(cos($2.fval) < 0.00000000001) yyerror("Indefinition error");
+                          if(cos($2.fval) < 0.000001) yyerror("Indefinition error");
                           else { 
                                   $$.val_type = FLOAT_TYPE;
                                   $$.fval = sin($2.fval)/cos($2.fval);

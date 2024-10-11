@@ -17,6 +17,7 @@ LEX_H = lex.yy.h
 YACC_OUT_C = bison_spec.tab.c
 YACC_OUT_H = bison_spec.tab.h
 YACC_OUT = $(YACC_OUT_C) $(YACC_OUT_H)
+YACC_OUTPUT = bison_spec.output
 
 OBJ = *.o
 
@@ -59,7 +60,7 @@ $(YACC_OUT): $(SRC_YACC)
 	$(YACC) $(YFLAGS) $(SRC_YACC)
 
 clean:
-	rm -f *~ $(BIN) $(BIN_INTERACTIVE) $(OBJ) $(YACC_OUT) $(LEX_OUT) $(EG_OUT) $(LEX_H)
+	rm -f *~ $(BIN) $(BIN_INTERACTIVE) $(OBJ) $(YACC_OUT) $(YACC_OUTPUT) $(LEX_OUT) $(EG_OUT) $(LEX_H)
 
 eg: $(EG_IN)
 	./$(BIN) $(EG_IN) $(EG_OUT)

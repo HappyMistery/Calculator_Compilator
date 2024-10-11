@@ -95,13 +95,13 @@ sin(PI / 2) + 1   // 2
 (7 + E) * 3 - sin(PI) // 20.155
 10 - (3.5 * PI) + E**2 - 4 / 3.0 // 1.080
 
-"Hello, " + "World!",                      // Basic string concatenation
-"Good " + "Morning " + "Everyone",           // Multiple strings concatenation
-"The result is: " + "42",                  // Concatenating a string with a numeric string
-"Pi is approximately: " + "3.14",          // String with numeric value
-"C" + "++" + " Programming",                  // Concatenating without spaces
-"Concatenation of " + "this" + " and " + "that", // Concatenating with spaces
-"Hello " + "there, " + "how " + "are " + "you?", // Greeting concatenation
-"String " + "operations " + "are " + "fun!",   // Fun statement concatenation
-"The quick " + "brown " + "fox " + "jumps",    // Concatenation of a phrase
+"Hello, " + "World!"                      // Basic string concatenation
+"Good " + "Morning " + "Everyone"           // Multiple strings concatenation
+"The result is: " + "42"                  // Concatenating a string with a numeric string
+"Pi is approximately: " + "3.14"          // String with numeric value
+"C" + "++" + " Programming"                  // Concatenating without spaces
+"Concatenation of " + "this" + " and " + "that" // Concatenating with spaces
+"Hello " + "there, " + "how " + "are " + "you?" // Greeting concatenation
+"String " + "operations " + "are " + "fun!"   // Fun statement concatenation
+"The quick " + "brown " + "fox " + "jumps"    // Concatenation of a phrase
 "Concatenating " + "strings " + "in C"       // Concatenating in C
