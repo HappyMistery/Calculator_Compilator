@@ -94,8 +94,8 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 "=="        { return EQU; }
 "<>"        { return NEQ; }
 
-"("         { return '('; }
-")"         { return ')'; }
+"("         { return OP; }
+")"         { return CP; }
 
 \n          { return ENDLINE; }
 [ \t\r]+    { /* Ignore whitespace */ }

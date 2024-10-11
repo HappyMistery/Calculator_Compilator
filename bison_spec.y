@@ -53,6 +53,7 @@
                       NOT AND ORR
                       LEN SUBSTR
                       BIN OCT HEX DEC
+                      OP CP
 
 %type <expr_val> expr arit_expr arit_term arit_pow arit_trig arit_factor 
                   bool_expr bool_orr bool_and bool_not bool_term
@@ -78,7 +79,7 @@ expr:
                   else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "[%s] %g\n", type_to_str($1.val_type), $1.fval);
                 }
   | bool_expr   { $$.val_type = BOOL_TYPE; fprintf(yyout, "[Bool] %s\n", ($1.bval == 1) ? "true" : "false"); }
-  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "[String] %s\n", $1.sval); }
+  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "[Str] %s\n", $1.sval); }
   | ID ASSIGN arit_expr   { 
                             $1.id_val.val_type = $3.val_type;
                             if ($3.val_type == INT_TYPE) {
@@ -106,7 +107,7 @@ expr:
 
 
 arit_expr:
-    LEN str_expr              { $$.val_type = INT_TYPE; $$.ival = strlen($2.sval); }
+    LEN OP str_expr CP      { $$.val_type = INT_TYPE; $$.ival = strlen($3.sval); }
   | SUB arit_term             { 
                                 if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = -$2.ival; }
                                 else { $$.val_type = FLOAT_TYPE; $$.fval = -$2.fval; }
@@ -186,7 +187,7 @@ arit_factor:
   | FLOAT       { $$.val_type = FLOAT_TYPE; $$.fval = $1; }
   | PI          { $$.val_type = FLOAT_TYPE; $$.fval = PI_CONST; }
   | E           { $$.val_type = FLOAT_TYPE; $$.fval = E_CONST; }
-  | '(' arit_expr ')'   { 
+  | OP arit_expr CP   { 
                           $$.val_type = $2.val_type;
                           if ($2.val_type == INT_TYPE) $$.ival = $2.ival;
                           else $$.fval = $2.fval;
@@ -206,7 +207,7 @@ bool_expr:
 ;
 
 bool_orr:
-      bool_orr  ORR bool_and   { $$.bval = $1.bval || $3.bval; }
+      bool_orr ORR bool_and   { $$.bval = $1.bval || $3.bval; }
     | bool_and
 ;
 
@@ -222,7 +223,8 @@ bool_not:
 
 bool_term:
       BOOL      { $$.val_type = BOOL_TYPE; $$.bval = $1; }
-    | '(' bool_expr ')'     { $$.val_type = $2.val_type; $$.bval = $2.bval;}
+    | bool_expr     { $$.val_type = $1.val_type; $$.bval = $1.bval;}
+    | OP bool_expr CP     { $$.val_type = $2.val_type; $$.bval = $2.bval;}
 ;
 
 
@@ -246,7 +248,7 @@ str_expr:
                                 $$.sval = strcat($1.sval, $3.sval);
                               }
   | SUBSTR str_expr arit_expr arit_expr   { char str[strlen($2.sval)]; memcpy(str, $2.sval+$3.ival, $4.ival); $$.sval = str; }
-  | '(' str_expr ')'          { $$.val_type = $2.val_type; $$.sval = $2.sval;}
+  | OP str_expr CP          { $$.val_type = $2.val_type; $$.sval = $2.sval;}
 ;
 
 %%
