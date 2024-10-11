@@ -77,8 +77,8 @@ expr:
                   if ($$.val_type == INT_TYPE) fprintf(yyout, "[%s] %d\n", type_to_str($1.val_type), $1.ival);
                   else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "[%s] %g\n", type_to_str($1.val_type), $1.fval);
                 }
-  | bool_expr   { $$.val_type = BOOL_TYPE; fprintf(yyout, "[%s] %s\n", type_to_str($1.val_type), ($1.bval == 1) ? "true" : "false"); }
-  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "[%s] %s\n", type_to_str($1.val_type), $1.sval); }
+  | bool_expr   { $$.val_type = BOOL_TYPE; fprintf(yyout, "[Bool] %s\n", ($1.bval == 1) ? "true" : "false"); }
+  | str_expr    { $$.val_type = STRING_TYPE; fprintf(yyout, "[String] %s\n", $1.sval); }
   | ID ASSIGN arit_expr   { 
                             $1.id_val.val_type = $3.val_type;
                             if ($3.val_type == INT_TYPE) {
@@ -246,6 +246,7 @@ str_expr:
                                 $$.sval = strcat($1.sval, $3.sval);
                               }
   | SUBSTR str_expr arit_expr arit_expr   { char str[strlen($2.sval)]; memcpy(str, $2.sval+$3.ival, $4.ival); $$.sval = str; }
+  | '(' str_expr ')'          { $$.val_type = $2.val_type; $$.sval = $2.sval;}
 ;
 
 %%

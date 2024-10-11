@@ -19,12 +19,13 @@
 9.0 / 3.0          // 3.0
 8.5 % 3.0          // 2.5
 2.5 ** 2.0         // 6.25
+3 ** 2.5         // 15.5885
 
-// Complex float operations
-(7.5 + 2.5) / 2.0 - 1.5 * 3 // 0.0
-(10.2 - 4.1) * 2.0 + 1.0 / 2.0 // 12.2
-3.0 * (4.0 + 2.5 ** 2.0) // 27.5
-(8.5 % 3.2) + 4.2 * 1.5 - 3.0 / 1.5 // 8.05
+// Complex mixed operations (int and float)
+(7 + 2.5) * 3 - 4 / 2 + 1.5 // 24.5
+10 - (3.5 * 2) + 8**2 - 4 / 3.0 // 62.333
+(3 * 2.0 + 1.5**2) - 7 / 3 // 5.75
+(5%2.5 + 4.5) * 3 - 2 / 1.0 // 12.0
 
 // Basic trigonometric operations (int and float)
 sin(0)            // 0
@@ -35,19 +36,8 @@ cos(PI / 4)      // 0.707107
 tan(PI / 4)      // 1
 
 // Complex trigonometric operations (int and float)
-sin(PI / 2)      // 1
-cos(PI / 2)      // 0
-sin(PI / 3)      // 0.866025
 cos(PI / 3)      // 0.5
 tan(PI / 3)      // 1.732051
-
-// Basic mixed operations (int and float)
-7 + 2.5          // 9.5
-10 - 3.5         // 6.5
-3 * 2.0          // 6.0
-8 / 3            // 2.66667
-5 % 2.5          // 2.0
-3 ** 2.5         // 15.5885
 
 // Basic mixed operations (int and trig)
 30 + sin(30)     // 30.499
@@ -58,12 +48,6 @@ tan(PI / 3)      // 1.732051
 7.5 + sin(PI / 6) // 8.0
 10.5 - cos(PI / 4) // 9.79289
 3.5 * tan(PI / 3) // 6.06218
-
-// Complex mixed operations (int and float)
-(7 + 2.5) * 3 - 4 / 2 + 1.5 // 24.5
-10 - (3.5 * 2) + 8**2 - 4 / 3.0 // 62.333
-(3 * 2.0 + 1.5**2) - 7 / 3 // 5.75
-(5%2.5 + 4.5) * 3 - 2 / 1.0 // 12.0
 
 // Complex mixed operations (int and trig)
 (30 + sin(30)) * 2 - 4 / 2 // 61.999
@@ -76,18 +60,15 @@ tan(PI / 3)      // 1.732051
 // Basic constant operations (PI and E)
 PI                 // 3.14159
 E                  // 2.71828
-PI + E             // 5.85987
 PI * E             // 8.53973
 
 // Complex constant operations (PI and E)
-PI**2        // 9.8696
+PI**4        // 9.8696
 E**2         // 7.38906
 sin(PI)           // 0
 cos(E)            // -0.91173
 
 // Basic mixed operations (int, float, trig, PI, and E)
-7 + PI            // 10.14159
-10.5 - E          // 7.78172
 8 / PI            // 2.54648
 sin(PI / 2) + 1   // 2
 

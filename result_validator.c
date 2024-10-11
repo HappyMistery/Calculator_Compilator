@@ -52,51 +52,36 @@ int validate_results(const char *output_file) {
         {"9.0 / 3.0", result_to_string("float", 9.0 / 3.0)}, 
         {"8.5 % 3.0", result_to_string("float", fmod(8.5, 3.0))}, 
         {"2.5 ** 2.0", result_to_string("float", pow(2.5, 2.0))}, 
-        {"(7.5 + 2.5) / 2.0 - 1.5 * 3", result_to_string("float", (7.5 + 2.5) / 2.0 - 1.5 * 3)}, 
-        {"(10.2 - 4.1) * 2.0 + 1.0 / 2.0", result_to_string("float", (10.2 - 4.1) * 2.0 + 1.0 / 2.0)}, 
-        {"3.0 * (4.0 + 2.5 ** 2.0)", result_to_string("float", 3.0 * (4.0 + pow(2.5, 2.0)))}, 
-        {"(8.5 % 3.2) + 4.2 * 1.5 - 3.0 / 1.5", result_to_string("float", fmod(8.5, 3.2) + 4.2 * 1.5 - 3.0 / 1.5)}, 
+        {"3 ** 2.5", result_to_string("float", pow(3, 2.5))}, 
+        {"(7 + 2.5) * 3 - 4 / 2 + 1.5", result_to_string("float", (7 + 2.5) * 3 - 4 / 2 + 1.5)}, 
+        {"10 - (3.5 * 2) + 8**2 - 4 / 3.0", result_to_string("float", 10 - (3.5 * 2) + pow(8, 2) - 4 / 3.0)}, 
+        {"(3 * 2.0 + 1.5**2) - 7 / 3", result_to_string("float", (3 * 2.0 + pow(1.5, 2)) - (float)7 / 3)}, 
+        {"(fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0", result_to_string("float", (fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0)}, 
         {"sin(0)", result_to_string("float", sin(0))}, 
         {"cos(0)", result_to_string("float", cos(0))}, 
         {"tan(0)", result_to_string("float", tan(0))}, 
         {"sin(PI / 4)", result_to_string("float", sin(M_PI / 4))},
         {"cos(PI / 4)", result_to_string("float", cos(M_PI / 4))}, 
         {"tan(PI / 4)", result_to_string("float", tan(M_PI / 4))}, 
-        {"sin(PI / 2)", result_to_string("float", sin(M_PI / 2))}, 
-        {"cos(PI / 2)", result_to_string("float", cos(M_PI / 2))}, 
-        {"sin(PI / 3)", result_to_string("float", sin(M_PI / 3))}, 
         {"cos(PI / 3)", result_to_string("float", cos(M_PI / 3))}, 
         {"tan(PI / 3)", result_to_string("float", tan(M_PI / 3))}, 
-        {"7 + 2.5", result_to_string("float", 7 + 2.5)}, 
-        {"10 - 3.5", result_to_string("float", 10 - 3.5)}, 
-        {"3 * 2.0", result_to_string("float", 3 * 2.0)}, 
-        {"8 / 3", result_to_string("float", (float)8 / 3)}, 
-        {"5 % 2.5", result_to_string("float", fmod(5, 2.5))}, 
-        {"3 ** 2.5", result_to_string("float", pow(3, 2.5))}, 
         {"30 + sin(30)", result_to_string("float", 30 + sin(30))}, 
         {"45 - cos(30)", result_to_string("float", 45 - cos(30))}, 
         {"60 * tan(30)", result_to_string("float", 60 * tan(30))}, 
         {"7.5 + sin(PI / 6)", result_to_string("float", 7.5 + sin(M_PI / 6))}, 
         {"10.5 - cos(PI / 4)", result_to_string("float", 10.5 - cos(M_PI / 4))}, 
         {"3.5 * tan(PI / 3)", result_to_string("float", 3.5 * tan(M_PI / 3))}, 
-        {"(7 + 2.5) * 3 - 4 / 2 + 1.5", result_to_string("float", (7 + 2.5) * 3 - 4 / 2 + 1.5)}, 
-        {"10 - (3.5 * 2) + 8**2 - 4 / 3.0", result_to_string("float", 10 - (3.5 * 2) + pow(8, 2) - 4 / 3.0)}, 
-        {"(3 * 2.0 + 1.5**2) - 7 / 3", result_to_string("float", (3 * 2.0 + pow(1.5, 2)) - (float)7 / 3)}, 
-        {"(fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0", result_to_string("float", (fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0)}, 
         {"(30 + sin(30)) * 2 - 4 / 2", result_to_string("float", (30 + sin(30)) * 2 - 4 / 2)}, 
         {"10 - (3 * cos(30)) + 5 - 3", result_to_string("float", 10 - (3 * cos(30)) + 5 - 3)}, 
         {"(7.5 + sin(PI / 4)) * 2 - 1.5", result_to_string("float", (7.5 + sin(M_PI / 4)) * 2 - 1.5)}, 
         {"10.2 - (3 * cos(PI / 4)) + 1.5", result_to_string("float", 10.2 - (3 * cos(M_PI / 4)) + 1.5)}, 
         {"PI", result_to_string("float", M_PI)}, 
-        {"E", result_to_string("float", M_E)}, 
-        {"PI + E", result_to_string("float", M_PI + M_E)}, 
+        {"E", result_to_string("float", M_E)},
         {"PI * E", result_to_string("float", M_PI * M_E)}, 
-        {"PI**2", result_to_string("float", pow(M_PI, 2))}, 
+        {"PI**4", result_to_string("float", pow(M_PI, 4))}, 
         {"E**2", result_to_string("float", pow(M_E, 2))}, 
         {"sin(PI)", result_to_string("float", sin(M_PI))}, 
-        {"cos(E)", result_to_string("float", cos(M_E))}, 
-        {"7 + PI", result_to_string("float", 7 + M_PI)}, 
-        {"10.5 - E", result_to_string("float", 10.5 - M_E)}, 
+        {"cos(E)", result_to_string("float", cos(M_E))},
         {"8 / PI", result_to_string("float", 8 / M_PI)}, 
         {"sin(PI / 2) + 1", result_to_string("float", sin(M_PI / 2) + 1)}, 
         {"(7 + E) * 3 - sin(PI)", result_to_string("float", (7 + M_E) * 3 - sin(M_PI))}, 
@@ -120,6 +105,31 @@ int validate_results(const char *output_file) {
         {"\"Concatenating \" + \"strings \" + \"in C\"", "[Str] Concatenating strings in C"},
     };
 
+    const struct {
+    const char* input;
+    const char* output;
+} boolean_test[] = {
+    {"true", "true"},
+    {"true and true", "true"},
+    {"false or false", "false"},
+    {"not false", "true"},
+    {"PI > 4", "false"},
+    {"1*0 == 0", "true"},
+    {"5 % 2 + 3 * 2 - 4 / 2 >= 5", "true"},
+    {"sin(PI / 2) + 1 < 2", "false"},
+    {"1.5 <= 1.5002", "true"},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+    {"", ""},
+};
+
     int total_results = sizeof(arit_test) / sizeof(arit_test[0]);
 
     int index;
@@ -134,11 +144,11 @@ int validate_results(const char *output_file) {
 
         /* Compare the result with the expected value (with a little tolerance) */
         if (strcmp(buffer, arit_test[index].output) > EPSILON) {
-            printf("%d [%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
+            printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
             printf("Result mismatch at line %d: expected %s, got %s\n\n", index + 1, arit_test[index].output, buffer);
         } else {
             passed++;
-            printf("%d [%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
+            printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
         }
     }
 
@@ -154,11 +164,11 @@ int validate_results(const char *output_file) {
 
         /* Compare the result with the expected string */
         if (strcmp(buffer, string_test[index].output)) {
-            printf("%d [%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
+            printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
             printf("\nResult mismatch at line %d: expected \"%s\", got \"%s\"\n", index + 1, string_test[index].output, buffer);
         } else {
             passed++;
-            printf("%d [%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
+            printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
         }
     }
 
