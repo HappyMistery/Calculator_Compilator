@@ -9,10 +9,7 @@
   #include "funcions.h"
   
 
-  int yylex(void);
   int yydebug = 1;
-  void yyerror(const char *s);
-
   extern FILE *yyout;
   extern int yylineno;
   #define YYERROR_VERBOSE 1
@@ -20,10 +17,12 @@
   const double PI_CONST = 3.141592653589793;
   const double E_CONST = 2.718281828459045;
 
+  int yylex(void);
+  void yyerror(const char *s);
   void cast_vals_to_flt(value_info *op1, value_info *op2);
   void custom_err_mssg(const char *s);
 
-  char err_mssg[511];
+  char err_mssg[150];
 %}
 %define parse.error verbose
 %locations
@@ -153,32 +152,32 @@ expr:
                             $$.val_type = INT_TYPE; $$.ival = $1.ival - $3.ival; 
                           }
                         }
-  | expr HIG expr       { /* Booleans and Strings cannot use the higher operator */
+  | expr HIG mult_expr  { /* Booleans and Strings cannot use the higher operator */
                           if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Higher (>) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval > $3.fval;
                         }
-  | expr HEQ expr       { /* Booleans and Strings cannot use the higher or equal operator */
+  | expr HEQ mult_expr  { /* Booleans and Strings cannot use the higher or equal operator */
                           if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval >= $3.fval;
                         }
-  | expr LOW expr       { /* Booleans and Strings cannot use the lower operator */
+  | expr LOW mult_expr       { /* Booleans and Strings cannot use the lower operator */
                           if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Lower (<) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval < $3.fval;
                         }
-  | expr LEQ expr       { /* Booleans and Strings cannot use the lower or equal operator */
+  | expr LEQ mult_expr  { /* Booleans and Strings cannot use the lower or equal operator */
                           if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval <= $3.fval;
                         }
-  | expr EQU expr       { /* Booleans and Strings cannot use the equal operator */
+  | expr EQU mult_expr  { /* Booleans and Strings cannot use the equal operator */
                           if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Equal (==) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval == $3.fval;
                         }
-  | expr NEQ expr       { /* Booleans and Strings cannot use the not equal operator */
+  | expr NEQ mult_expr  { /* Booleans and Strings cannot use the not equal operator */
                           if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval != $3.fval;
