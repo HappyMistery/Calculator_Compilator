@@ -21,8 +21,12 @@
   const double E_CONST = 2.718281828459045;
 
   void cast_vals_to_flt(value_info *op1, value_info *op2);
+  void custom_err_mssg(const char *s);
+
+  char err_mssg[511];
 %}
 %define parse.error verbose
+%locations
 
 %code requires {
   #include "dades.h"
@@ -75,19 +79,19 @@ stmnt:
     ID ASSIGN expr  { 
                       $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
                       if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
-                        printf("[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival); fprintf(yyout, "%d\n", $3.ival);
+                        fprintf(yyout, "[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival);
                         $$.val_type = INT_TYPE; $$.ival = $3.ival; 
                       }
                       else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
-                        printf("[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval); fprintf(yyout, "%g\n", $3.fval);
+                        fprintf(yyout, "[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval);
                         $$.val_type = FLOAT_TYPE; $$.fval = $3.fval;
                       }
                       else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
-                        printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false"); fprintf(yyout, "%d\n", $3.bval);
+                        fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false");
                         $$.val_type = BOOL_TYPE; $$.bval = $3.bval;
                       }
                       else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
-                        printf("[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval); fprintf(yyout, "%s\n", $3.sval);
+                        fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval);
                         $$.val_type = STRING_TYPE; $$.sval = $3.sval;
                       }
                     }
@@ -102,17 +106,17 @@ stmnt:
 expr:
     LEN OP mult_expr CP { /* Can only use LEN() with a string */
                           if ($3.val_type == STRING_TYPE) {  $$.val_type = INT_TYPE; $$.ival = strlen($3.sval); }
-                          else fprintf(stderr, "Length (LEN(String str)) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type));
+                          else { sprintf(err_mssg, "LEN(String str) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); custom_err_mssg(err_mssg); }
                         }
   | SUB mult_expr       { /* Can only use Unary Minus Operator (-) with a number */
                           if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = -$2.ival; }
                           else if ($2.val_type == FLOAT_TYPE) { $$.val_type = FLOAT_TYPE; $$.fval = -$2.fval; }
-                          else fprintf(stderr, "Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type));
+                          else { sprintf(err_mssg, "Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type)); custom_err_mssg(err_mssg); }
                         }
   | ADD mult_expr       { /* Can only use Unary Plus Operator (+) with a number */
                           if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = +$2.ival; }
                           else if ($2.val_type == FLOAT_TYPE) { $$.val_type = FLOAT_TYPE; $$.fval = +$2.fval; }
-                          else fprintf(stderr, "Unary Plus Operator (+) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type));
+                          else { sprintf(err_mssg, "Unary Plus Operator (+) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type)); custom_err_mssg(err_mssg); }
                         }
   | expr ADD mult_expr  { /* If any one of the operands is a string, concatenate */
                           if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
@@ -133,7 +137,7 @@ expr:
                               }
                             }
                           } /* If none one of the operands is a string, a boolean cannot use the addition operator */
-                          else if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Addition (+) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Addition (+) operator cannot be applied to type 'Boolean'");
                           else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float addition */
                             cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval + $3.fval;
                           } else { /* If both operands are integers, do an Integer addition */
@@ -141,8 +145,8 @@ expr:
                           }
                         }
   | expr SUB mult_expr  { /* Booleans and Strings cannot use the subtraction operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Subtraction (-) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Subtraction (-) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Subtraction (-) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Subtraction (-) operator cannot be applied to type 'String'");
                           else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {  /* If some operand is a Float, do a Float subtraction */
                             cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval - $3.fval;
                           } else { /* If both operands are integers, do an Integer subtraction */
@@ -150,53 +154,53 @@ expr:
                           }
                         }
   | expr HIG expr       { /* Booleans and Strings cannot use the higher operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Higher (>) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Higher (>) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Higher (>) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval > $3.fval;
                         }
   | expr HEQ expr       { /* Booleans and Strings cannot use the higher or equal operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Higher or equal (>=) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Higher or equal (>=) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval >= $3.fval;
                         }
   | expr LOW expr       { /* Booleans and Strings cannot use the lower operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Lower (<) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Lower (<) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Lower (<) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval < $3.fval;
                         }
   | expr LEQ expr       { /* Booleans and Strings cannot use the lower or equal operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Lower or equal (<=) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Lower or equal (<=) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval <= $3.fval;
                         }
   | expr EQU expr       { /* Booleans and Strings cannot use the equal operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Equal (==) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Equal (==) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Equal (==) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval == $3.fval;
                         }
   | expr NEQ expr       { /* Booleans and Strings cannot use the not equal operator */
-                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Not equal (<>) operator cannot be applied to type 'Boolean'");
-                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Not equal (<>) operator cannot be applied to type 'String'");
+                          if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
+                          else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval != $3.fval;
                         }
-  | SUBSTR mult_expr mult_expr mult_expr    { /* Can only use SUBSTR() with a string */
-                                              if ($2.val_type != STRING_TYPE) fprintf(stderr, "Substring (SUBSTR(String str, Int start, Int length)) 1st parameter expects type 'String' but it got type '%s'", type_to_str($2.val_type));
-                                              else if ($3.val_type != INT_TYPE) fprintf(stderr, "Substring (SUBSTR(String str, Int start, Int length)) 2nd parameter expects type 'Integer' but it got type '%s'", type_to_str($3.val_type));
-                                              else if ($4.val_type != INT_TYPE) fprintf(stderr, "Substring (SUBSTR(String str, Int start, Int length)) 3rd parameter expects type 'Integer' but it got type '%s'", type_to_str($4.val_type));
-                                              else {
-                                                char str[strlen($2.sval)]; 
-                                                memcpy(str, $2.sval+$3.ival, $4.ival); 
-                                                $$.sval = str;
-                                              }
-                                            }
+  | SUBSTR OP mult_expr mult_expr mult_expr CP  { /* Can only use SUBSTR() with a string */
+                                                  if ($3.val_type != STRING_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); custom_err_mssg(err_mssg); }
+                                                  else if ($4.val_type != INT_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 2nd parameter expects type 'Integer' but it got type '%s'", type_to_str($4.val_type)); custom_err_mssg(err_mssg); }
+                                                  else if ($5.val_type != INT_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 3rd parameter expects type 'Integer' but it got type '%s'", type_to_str($5.val_type)); custom_err_mssg(err_mssg); }
+                                                  else {
+                                                    char str[strlen($3.sval)*2]; /* Ensure enough memory for the final substring */
+                                                    memcpy(str, $3.sval+$4.ival, $5.ival); 
+                                                    $$.val_type = STRING_TYPE; $$.sval = str;
+                                                  }
+                                                }
   | mult_expr
 ;
 
 
 mult_expr:
     mult_expr MUL exp_expr    { /* Booleans and Strings cannot use the multiplication operator */
-                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Multiplication (*) operator cannot be applied to type 'Boolean'");
-                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Multiplication (*) operator cannot be applied to type 'String'");
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Multiplication (*) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Multiplication (*) operator cannot be applied to type 'String'");
                                 else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {  /* If some operand is a Float, do a Float multiplication */
                                   cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = $1.fval * $3.fval;
                                 } else { /* If both operands are integers, do an Integer multiplication */
@@ -206,9 +210,9 @@ mult_expr:
   | mult_expr DIV exp_expr    { 
                                 cast_vals_to_flt(&$1, &$3); /* floats are used for the operation in order to get a float result */
                                 /* Booleans and Strings cannot use the division operator */
-                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Division (/) operator cannot be applied to type 'Boolean'");
-                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Division (/) operator cannot be applied to type 'String'");
-                                else if ($3.fval < 0.000001 && $3.fval > -0.000001) fprintf(stderr, "Division by zero"); /* If the divider is 0, error*/
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Division (/) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Division (/) operator cannot be applied to type 'String'");
+                                else if ($3.fval < 0.000001 && $3.fval > -0.000001) custom_err_mssg("Division by zero"); /* If the divider is 0, error*/
                                 else { /* If the divider is not 0, divide*/
                                   $$.val_type = FLOAT_TYPE; $$.fval = $1.fval / $3.fval;
                                 }
@@ -216,9 +220,9 @@ mult_expr:
   | mult_expr MOD exp_expr    { 
                                 cast_vals_to_flt(&$1, &$3); /* floats are used to look for a divider == 0 */
                                 /* Booleans and Strings cannot use the modulo operator */
-                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Modulo (%%) operator cannot be applied to type 'Boolean'");
-                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Modulo (%%) operator cannot be applied to type 'String'");
-                                else if (($3.fval < 0.000001 && $3.fval > -0.000001)) fprintf(stderr, "Modulo by zero");  /* If the divider is 0, error*/
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Modulo (%%) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Modulo (%%) operator cannot be applied to type 'String'");
+                                else if (($3.fval < 0.000001 && $3.fval > -0.000001)) custom_err_mssg("Modulo by zero");  /* If the divider is 0, error*/
                                 else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float modulo */
                                   $$.val_type = FLOAT_TYPE; $$.fval = fmod($1.fval,$3.fval); 
                                 } else { /* If both operands are integers, do an Integer division */
@@ -226,7 +230,7 @@ mult_expr:
                                 }
                               }
   | mult_expr ORR exp_expr    { /* Only booleans can use the or operator */
-                                if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) fprintf(stderr, "Or (or) operator can only be applied to type 'Boolean'");
+                                if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) custom_err_mssg("Or (or) operator can only be applied to type 'Boolean'");
                                 else {
                                   $$.val_type = BOOL_TYPE; $$.bval = $1.bval || $3.bval;
                                 }
@@ -236,15 +240,15 @@ mult_expr:
 
 exp_expr:
     trig_expr POW exp_expr  { /* Booleans and Strings cannot use the power operator */
-                              if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) fprintf(stderr, "Power (**) operator cannot be applied to type 'Boolean'");
-                              else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) fprintf(stderr, "Power (**) operator cannot be applied to type 'String'");
+                              if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Power (**) operator cannot be applied to type 'Boolean'");
+                              else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Power (**) operator cannot be applied to type 'String'");
                               else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float power */
                                 cast_vals_to_flt(&$1, &$3); $$.val_type = FLOAT_TYPE; $$.fval = pow($1.fval,$3.fval);
                               } else { /* If both operands are integers, do an Integer power */
                                 $$.val_type = INT_TYPE; $$.ival = pow($1.ival,$3.ival); }
                             }
   | exp_expr AND trig_expr  { /* Only booleans can use the or operator */
-                              if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) fprintf(stderr, "And (and) operator can only be applied to type 'Boolean'");
+                              if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) custom_err_mssg("And (and) operator can only be applied to type 'Boolean'");
                               else { 
                                 $$.val_type = BOOL_TYPE; $$.bval = $1.bval && $3.bval; 
                               }
@@ -254,8 +258,8 @@ exp_expr:
 
 trig_expr:
     SIN term_expr     { /* Booleans and Strings cannot be used in trigonometric expressions */
-                        if ($2.val_type == BOOL_TYPE) fprintf(stderr, "sin() cannot take a type 'Boolean' as a parameter");
-                        else if ($2.val_type == STRING_TYPE) fprintf(stderr, "sin() cannot take a type 'String' as a parameter");
+                        if ($2.val_type == BOOL_TYPE) custom_err_mssg("sin() cannot take a type 'Boolean' as a parameter");
+                        else if ($2.val_type == STRING_TYPE) custom_err_mssg("sin() cannot take a type 'String' as a parameter");
                         else {
                           cast_vals_to_flt(&$2, NULL); $$.val_type = FLOAT_TYPE; /* Cast the values to float for easier validations */
                           if(sin($2.fval) < 0.000001 && sin($2.fval) > -0.000001) $$.fval = 0;  /* Values really close to 0 get treated as 0 */
@@ -264,8 +268,8 @@ trig_expr:
                       }
   | COS term_expr     { 
                         /* Booleans and Strings cannot be used in trigonometric expressions */
-                        if ($2.val_type == BOOL_TYPE) fprintf(stderr, "cos() cannot take a type 'Boolean' as a parameter");
-                        else if ($2.val_type == STRING_TYPE) fprintf(stderr, "cos() cannot take a type 'String' as a parameter");
+                        if ($2.val_type == BOOL_TYPE) custom_err_mssg("cos() cannot take a type 'Boolean' as a parameter");
+                        else if ($2.val_type == STRING_TYPE) custom_err_mssg("cos() cannot take a type 'String' as a parameter");
                         else {
                           cast_vals_to_flt(&$2, NULL); $$.val_type = FLOAT_TYPE; /* Cast the values to float for easier validations */
                           if(cos($2.fval) < 0.000001 && cos($2.fval) > -0.000001) $$.fval = 0;  /* Values really close to 0 get treated as 0 */
@@ -274,18 +278,18 @@ trig_expr:
                       }
   | TAN term_expr     { 
                         /* Booleans and Strings cannot be used in trigonometric expressions */
-                        if ($2.val_type == BOOL_TYPE) fprintf(stderr, "tan() cannot take a type 'Boolean' as a parameter");
-                        else if ($2.val_type == STRING_TYPE) fprintf(stderr, "tan() cannot take a type 'String' as a parameter");
+                        if ($2.val_type == BOOL_TYPE) custom_err_mssg("tan() cannot take a type 'Boolean' as a parameter");
+                        else if ($2.val_type == STRING_TYPE) custom_err_mssg("tan() cannot take a type 'String' as a parameter");
                         else {
                           cast_vals_to_flt(&$2, NULL);  /* Cast the values to float for easier validations */
-                          if(cos($2.fval) < 0.000001) fprintf(stderr, "Indefinition error");  /* tan(x) == sin(x)/cos(x) so if cos(x) == 0, we would be dividing by 0 */
+                          if(cos($2.fval) < 0.000001) custom_err_mssg("Indefinition error");  /* tan(x) == sin(x)/cos(x) so if cos(x) == 0, we would be dividing by 0 */
                           else { 
                                   $$.val_type = FLOAT_TYPE; $$.fval = sin($2.fval)/cos($2.fval);  /* calculate tan(x) */
                           }
                         }
                       }
   | NOT term_expr     { /* Only booleans can use the or operator */
-                        if ($2.val_type != BOOL_TYPE) fprintf(stderr, "Not (not) operator can only be applied to type 'Boolean'");
+                        if ($2.val_type != BOOL_TYPE) custom_err_mssg("Not (not) operator can only be applied to type 'Boolean'");
                         else { 
                           $$.val_type = BOOL_TYPE;
                           $$.bval = !$2.bval; 
@@ -312,13 +316,17 @@ term_expr:
 %%
 
 void cast_vals_to_flt(value_info *op1, value_info *op2) {
-    if(op2 == NULL) {
-      if (op1->val_type == INT_TYPE) op1->fval = (float)op1->ival;
-    }
-    else {
-      if (op1->val_type == INT_TYPE) op1->fval = (float)op1->ival;
-      if (op2->val_type == INT_TYPE) op2->fval = (float)op2->ival;
-    }
+  if(op2 == NULL) {
+    if (op1->val_type == INT_TYPE) op1->fval = (float)op1->ival;
+  }
+  else {
+    if (op1->val_type == INT_TYPE) op1->fval = (float)op1->ival;
+    if (op2->val_type == INT_TYPE) op2->fval = (float)op2->ival;
+  }
+}
+
+void custom_err_mssg(const char *s) {
+  fprintf(stderr, "Error at line %d: %s\n", yylineno, s);
 }
 
 int yywrap() {

@@ -11,6 +11,8 @@
     #include <unistd.h>
     #include <math.h>
 
+    int current_column = 1;
+
     void yyerror(const char *s);
     #ifndef strdup
     char* strdup(const char* s) {
@@ -97,7 +99,7 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 "("         { return OP; }
 ")"         { return CP; }
 
-\n          { return ENDLINE; }
+\n          { current_column = 1; return ENDLINE; }
 [ \t\r]+    { /* Ignore whitespace */ }
 
 .           { printf("UNKNOWN: %s\n", yytext); }
