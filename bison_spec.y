@@ -58,7 +58,7 @@
                       BIN OCT HEX DEC
                       OP CP
 
-%type <expr_val> stmnt expr mult_expr exp_expr trig_expr term_expr
+%type <expr_val> stmnt expr mult_expr exp_expr trig_expr func_expr term_expr
 
 %start calculator
 
@@ -95,19 +95,15 @@ stmnt:
                       }
                     }
   | expr  {
-            if ($$.val_type == INT_TYPE) fprintf(yyout, "[Integer] %d\n", $1.ival);
-            else if ($$.val_type == FLOAT_TYPE) fprintf(yyout, "[Float] %g\n", $1.fval);
-            else if ($$.val_type == BOOL_TYPE) fprintf(yyout, "[Boolean] %s\n", ($1.bval == 1) ? "true" : "false");
-            else if ($$.val_type == STRING_TYPE) fprintf(yyout, "[String] %s\n", $1.sval);
+            if ($$.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = $1.ival; fprintf(yyout, "[Integer] %d\n", $1.ival); }
+            else if ($$.val_type == FLOAT_TYPE) { $$.val_type = FLOAT_TYPE; $$.ival = $1.fval; fprintf(yyout, "[Float] %g\n", $1.fval); }
+            else if ($$.val_type == BOOL_TYPE) { $$.val_type = BOOL_TYPE; $$.bval = $1.bval; fprintf(yyout, "[Boolean] %s\n", ($1.bval == 1) ? "true" : "false"); }
+            else if ($$.val_type == STRING_TYPE) { $$.val_type = STRING_TYPE; $$.sval = $1.sval; fprintf(yyout, "[String] %s\n", $1.sval); }
           }
 ;
 
 expr:
-    LEN OP mult_expr CP { /* Can only use LEN() with a string */
-                          if ($3.val_type == STRING_TYPE) {  $$.val_type = INT_TYPE; $$.ival = strlen($3.sval); }
-                          else { sprintf(err_mssg, "LEN(String str) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); custom_err_mssg(err_mssg); }
-                        }
-  | SUB mult_expr       { /* Can only use Unary Minus Operator (-) with a number */
+    SUB mult_expr       { /* Can only use Unary Minus Operator (-) with a number */
                           if ($2.val_type == INT_TYPE) { $$.val_type = INT_TYPE; $$.ival = -$2.ival; }
                           else if ($2.val_type == FLOAT_TYPE) { $$.val_type = FLOAT_TYPE; $$.fval = -$2.fval; }
                           else { sprintf(err_mssg, "Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type)); custom_err_mssg(err_mssg); }
@@ -119,18 +115,21 @@ expr:
                         }
   | expr ADD mult_expr  { /* If any one of the operands is a string, concatenate */
                           if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
-                            char str[25];
+                            char str[255];
                             cast_vals_to_flt(&$1, &$3);
                             $$.val_type = STRING_TYPE;
                             if ($1.val_type == STRING_TYPE) { /* If 1st operand is a string, then 2nd is any other type */
                               if ($3.val_type == STRING_TYPE) $$.sval = strcat($1.sval, $3.sval); /* If both operands are a string, concatenate them */
                               else if ($3.val_type == BOOL_TYPE) $$.sval = strcat($1.sval, ($3.bval == 1) ? "true" : "false"); /* Can concatenate booleans */
                               else {  /* If it's not a boolean, concatenate a number */
-                                sprintf(str, "%g", $3.fval); $$.sval = strcat($1.sval, str); 
+                                sprintf(str, "%g", $3.fval); $$.sval = strcat($1.sval, str);
                               }
                             }
                             else {  /* If 2nd operand is a string, then 1st is any other type */
-                              if ($1.val_type == BOOL_TYPE) $$.sval = strcat(($1.bval == 1) ? "true" : "false", $3.sval); /* Can concatenate booleans */
+                              if ($1.val_type == BOOL_TYPE) { /* Can concatenate booleans */
+                                strcpy(str, ($1.bval == 1) ? "true" : "false");
+                                $$.sval = strcat(str, $3.sval);
+                              } 
                               else {  /* If it's not a boolean, concatenate a number */
                                 sprintf(str, "%g", $1.fval); $$.sval = strcat(str, $3.sval);
                               }
@@ -182,21 +181,11 @@ expr:
                           else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
                           cast_vals_to_flt(&$1, &$3); $$.val_type = BOOL_TYPE; $$.bval = $1.fval != $3.fval;
                         }
-  | SUBSTR OP mult_expr mult_expr mult_expr CP  { /* Can only use SUBSTR() with a string */
-                                                  if ($3.val_type != STRING_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); custom_err_mssg(err_mssg); }
-                                                  else if ($4.val_type != INT_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 2nd parameter expects type 'Integer' but it got type '%s'", type_to_str($4.val_type)); custom_err_mssg(err_mssg); }
-                                                  else if ($5.val_type != INT_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 3rd parameter expects type 'Integer' but it got type '%s'", type_to_str($5.val_type)); custom_err_mssg(err_mssg); }
-                                                  else {
-                                                    char str[strlen($3.sval)*2]; /* Ensure enough memory for the final substring */
-                                                    memcpy(str, $3.sval+$4.ival, $5.ival); 
-                                                    $$.val_type = STRING_TYPE; $$.sval = str;
-                                                  }
-                                                }
   | mult_expr
 ;
 
 
-mult_expr:
+mult_expr: 
     mult_expr MUL exp_expr    { /* Booleans and Strings cannot use the multiplication operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) custom_err_mssg("Multiplication (*) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) custom_err_mssg("Multiplication (*) operator cannot be applied to type 'String'");
@@ -294,6 +283,24 @@ trig_expr:
                           $$.bval = !$2.bval; 
                         }
                       }
+  | func_expr
+;
+
+func_expr:
+    LEN OP func_expr CP { /* Can only use LEN() with a string */
+                          if ($3.val_type == STRING_TYPE) {  $$.val_type = INT_TYPE; $$.ival = strlen($3.sval); }
+                          else { sprintf(err_mssg, "LEN(String str) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); custom_err_mssg(err_mssg); }
+                        }
+  | SUBSTR OP func_expr func_expr func_expr CP  { /* Can only use SUBSTR() with a string */
+                                                  if ($3.val_type != STRING_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); custom_err_mssg(err_mssg); }
+                                                  else if ($4.val_type != INT_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 2nd parameter expects type 'Integer' but it got type '%s'", type_to_str($4.val_type)); custom_err_mssg(err_mssg); }
+                                                  else if ($5.val_type != INT_TYPE) { sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 3rd parameter expects type 'Integer' but it got type '%s'", type_to_str($5.val_type)); custom_err_mssg(err_mssg); }
+                                                  else {
+                                                    char *str = (char *)malloc($5.ival + 1); /* Ensure enough memory for the final substring */
+                                                    memcpy(str, $3.sval+$4.ival, $5.ival); 
+                                                    str[$5.ival] = '\0'; $$.val_type = STRING_TYPE; $$.sval = str;
+                                                  }
+                                                }
   | term_expr
 ;
 

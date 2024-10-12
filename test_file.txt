@@ -9,7 +9,7 @@
 (7 + 3) * 2 - 5    // 15
 (10 - 4) / 2 + 8 * 3 // 26
 3 * (4 + 2 ** 3)   // 24
-5 % 2 + 3 * 2 - 4 / 2 // 5
+5 % 2 + 3 * 2 - LEN("hola") / 2 // 5
 
 // Basic float operations
 7.5 + 2.5          // 10.0
@@ -23,7 +23,7 @@
 
 // Complex mixed operations (int and float)
 (7 + 2.5) * 3 - 4 / 2 + 1.5 // 24.5
-10 - (3.5 * 2) + 8**2 - 4 / 3.0 // 62.333
+10 - (3.5 * 2) + LEN("perfecto")**2 - 4 / 3.0 // 62.333
 (3 * 2.0 + 1.5**2) - 7 / 3 // 5.75
 (5%2.5 + 4.5) * 3 - 2 / 1.0 // 12.0
 
@@ -40,7 +40,7 @@ cos(PI / 3)      // 0.5
 tan(PI / 3)      // 1.732051
 
 // Basic mixed operations (int and trig)
-30 + sin(30)     // 30.499
+LEN("Las estrellas brillan de noche") + sin(30)     // 30.499
 45 - cos(30)     // 44.134
 60 * tan(30)     // 34.641
 
@@ -55,7 +55,7 @@ tan(PI / 3)      // 1.732051
 
 // Complex mixed operations (float and trig)
 (7.5 + sin(PI / 4)) * 2 - 1.5 // 14.414
-10.2 - (3 * cos(PI / 4)) + 1.5 // 11.914
+10.2 - (3 * cos(PI / LEN("duck"))) + 1.5 // 11.914
 
 // Basic constant operations (PI and E)
 PI                 // 3.14159
@@ -74,16 +74,26 @@ sin(PI / 2) + 1   // 2
 
 // Complex mixed operations (int, float, trig, PI, and E)
 (7 + E) * 3 - sin(PI) // 20.155
-10 - (3.5 * PI) + E**2 - 4 / 3.0 // 1.080
+10 - (3.5 * PI) + E**2 - LEN("Piernas al fallo") / 3.0 // 1.080
 
+/* 
+String operations using
+string concat (+), 
+SUBSTR and both of them 
+at the same time
+*/
 "Hello, " + "World!"                      // Basic string concatenation
 "Good " + "Morning " + "Everyone"           // Multiple strings concatenation
 "The result is: " + "42"                  // Concatenating a string with a numeric string
+SUBSTR("Hello professor" 6 10)           // Basic substringing
+"A boolean can be" + " either " + true + " or " + false     //String concatenation with a boolean
 "Pi is approximately: " + "3.14"          // String with numeric value
 "C" + "++" + " Programming"                  // Concatenating without spaces
 "Concatenation of " + "this" + " and " + "that" // Concatenating with spaces
 "Hello " + "there, " + "how " + "are " + "you?" // Greeting concatenation
 "String " + "operations " + "are " + "fun!"   // Fun statement concatenation
+SUBSTR(("xd" + 123) 2 3)                    // Substring of a concatenation
+"To say that 1 == 1 is " + true and (1==1)    // String concat with boolean operations
 "The quick " + "brown " + "fox " + "jumps"    // Concatenation of a phrase
 "Concatenating " + "strings " + "in C"       // Concatenating in C
 

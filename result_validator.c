@@ -44,7 +44,7 @@ int validate_results(const char *output_file) {
         {"(7 + 3) * 2 - 5", result_to_string("int", (7 + 3) * 2 - 5)}, 
         {"(10 - 4) / 2 + 8 * 3", result_to_string("float", (10 - 4) / 2 + 8 * 3)}, 
         {"3 * (4 + 2 ** 3)", result_to_string("int", 3 * (4 + pow(2, 3)))}, 
-        {"5 % 2 + 3 * 2 - 4 / 2", result_to_string("float", 5 % 2 + 3 * 2 - 4 / 2)}, 
+        {"5 % 2 + 3 * 2 - LEN(\"hola\") / 2", result_to_string("float", 5 % 2 + 3 * 2 - strlen("hola") / 2)}, 
         {"7.5 + 2.5", result_to_string("float", 7.5 + 2.5)}, 
         {"10.2 - 4.1", result_to_string("float", 10.2 - 4.1)}, 
         {"3.0 * 4.0", result_to_string("float", 3.0 * 4.0)}, 
@@ -54,7 +54,7 @@ int validate_results(const char *output_file) {
         {"2.5 ** 2.0", result_to_string("float", pow(2.5, 2.0))}, 
         {"3 ** 2.5", result_to_string("float", pow(3, 2.5))}, 
         {"(7 + 2.5) * 3 - 4 / 2 + 1.5", result_to_string("float", (7 + 2.5) * 3 - 4 / 2 + 1.5)}, 
-        {"10 - (3.5 * 2) + 8**2 - 4 / 3.0", result_to_string("float", 10 - (3.5 * 2) + pow(8, 2) - 4 / 3.0)}, 
+        {"10 - (3.5 * 2) + LEN(\"perfecto\")**2 - 4 / 3.0", result_to_string("float", 10 - (3.5 * 2) + pow(strlen("perfecto"), 2) - 4 / 3.0)}, 
         {"(3 * 2.0 + 1.5**2) - 7 / 3", result_to_string("float", (3 * 2.0 + pow(1.5, 2)) - (float)7 / 3)}, 
         {"(fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0", result_to_string("float", (fmod(5, 2.5) + 4.5) * 3 - 2 / 1.0)}, 
         {"sin(0)", result_to_string("float", sin(0))}, 
@@ -65,7 +65,7 @@ int validate_results(const char *output_file) {
         {"tan(PI / 4)", result_to_string("float", tan(M_PI / 4))}, 
         {"cos(PI / 3)", result_to_string("float", cos(M_PI / 3))}, 
         {"tan(PI / 3)", result_to_string("float", tan(M_PI / 3))}, 
-        {"30 + sin(30)", result_to_string("float", 30 + sin(30))}, 
+        {"LEN(\"Las estrellas brillan de noche\") + sin(30)", result_to_string("float", strlen("Las estrellas brillan de noche") + sin(30))}, 
         {"45 - cos(30)", result_to_string("float", 45 - cos(30))}, 
         {"60 * tan(30)", result_to_string("float", 60 * tan(30))}, 
         {"7.5 + sin(PI / 6)", result_to_string("float", 7.5 + sin(M_PI / 6))}, 
@@ -74,7 +74,7 @@ int validate_results(const char *output_file) {
         {"(30 + sin(30)) * 2 - 4 / 2", result_to_string("float", (30 + sin(30)) * 2 - 4 / 2)}, 
         {"10 - (3 * cos(30)) + 5 - 3", result_to_string("float", 10 - (3 * cos(30)) + 5 - 3)}, 
         {"(7.5 + sin(PI / 4)) * 2 - 1.5", result_to_string("float", (7.5 + sin(M_PI / 4)) * 2 - 1.5)}, 
-        {"10.2 - (3 * cos(PI / 4)) + 1.5", result_to_string("float", 10.2 - (3 * cos(M_PI / 4)) + 1.5)}, 
+        {"10.2 - (3 * cos(PI / LEN(\"duck\"))) + 1.5", result_to_string("float", 10.2 - (3 * cos(M_PI / strlen("duck"))) + 1.5)}, 
         {"PI", result_to_string("float", M_PI)}, 
         {"E", result_to_string("float", M_E)},
         {"PI * E", result_to_string("float", M_PI * M_E)}, 
@@ -85,7 +85,7 @@ int validate_results(const char *output_file) {
         {"8 / PI", result_to_string("float", 8 / M_PI)}, 
         {"sin(PI / 2) + 1", result_to_string("float", sin(M_PI / 2) + 1)}, 
         {"(7 + E) * 3 - sin(PI)", result_to_string("float", (7 + M_E) * 3 - sin(M_PI))}, 
-        {"10 - (3.5 * PI) + E**2 - 4 / 3.0", result_to_string("float", 10 - (3.5 * M_PI) + pow(M_E, 2) - 4 / 3.0)}
+        {"10 - (3.5 * PI) + E**2 - LEN(\"Piernas al fallo\") / 3.0", result_to_string("float", 10 - (3.5 * M_PI) + pow(M_E, 2) - strlen("Piernas al fallo") / 3.0)}
     };
 
 
@@ -96,11 +96,15 @@ int validate_results(const char *output_file) {
         {"\"Hello, \" + \"World!\"", "[String] Hello, World!"},                      
         {"\"Good \" + \"Morning \" + \"Everyone\"", "[String] Good Morning Everyone"},
         {"\"The result is: \" + \"42\"", "[String] The result is: 42"},
-        {"\"Pi is approximately: \" + \"3.14\"", "[String] Pi is approximately: 3.14"},          
+        {"SUBSTR(\"Hello professor\" 6 10)", "[String] professor"},
+        {"\"A boolean can be\" + \" either \" + true + \" or \" + false\"", "[String] A boolean can be either true or false"},
+        {"\"Pi is approximately: \" + \"3.14\"", "[String] Pi is approximately: 3.14"},       
         {"\"C\" + \"++\" + \" Programming\"", "[String] C++ Programming"},
         {"\"Concatenation of \" + \"this\" + \" and \" + \"that\"", "[String] Concatenation of this and that"},
         {"\"Hello \" + \"there, \" + \"how \" + \"are \" + \"you?\"", "[String] Hello there, how are you?"},
         {"\"String \" + \"operations \" + \"are \" + \"fun!\"", "[String] String operations are fun!"},
+        {"SUBSTR((\"xd\" + 123) 2 3)", "[String] 123"},
+        {"\"To say that 1 == 1 is \" + true and (1==1)", "[String] To say that 1 == 1 is true"},
         {"\"The quick \" + \"brown \" + \"fox \" + \"jumps\"", "[String] The quick brown fox jumps"},
         {"\"Concatenating \" + \"strings \" + \"in C\"", "[String] Concatenating strings in C"},
     };
