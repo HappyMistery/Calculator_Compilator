@@ -1,0 +1,2 @@
+Error at line 2: Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'
+Error at line 4: Division by zero

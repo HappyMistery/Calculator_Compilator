@@ -113,3 +113,17 @@ cos(0) <> 1
 #Mixed boolean operations
 (3 > 1.75) and true or false
 (not (PI <> PI) or false) and (true and not(false and (4>=5)))
+
+/* Error handling */
+-"hello
++true
+5 + false
+"hello" - 3
+3 * true
+10/0
+5%0
+"hello" ** 2
+"abc" > 123
+5 and "hello"
+sin(true)
+"123abc"
