@@ -6,6 +6,11 @@
 #define EPSILON 1e-4
 const double M_PI = 3.141592653589793;
 const double M_E = 2.718281828459045;
+const int BUFFER_LENGTH = 512;
+
+int total_results;
+int passed;
+int index;
 
 char* result_to_string(char* type, double res) {
     char tmp_str[50];
@@ -23,9 +28,9 @@ char* result_to_string(char* type, double res) {
 
 
  
-int validate_results(const char *output_file) {
+int validate_results(const char *input_file, const char *output_file) {
     FILE *file = fopen(output_file, "r");
-    char buffer[511];
+    char buffer[BUFFER_LENGTH];
     if (!file) {
         printf("Failed to open result file: %s\n", output_file);
         return EXIT_FAILURE;
@@ -112,81 +117,83 @@ int validate_results(const char *output_file) {
     const struct {
     const char* input;
     const char* output;
-} boolean_test[] = {
-    {"true", "[Boolean] true"},
-    {"true and true", "[Boolean] true"},
-    {"false or false", "[Boolean] false"},
-    {"not false", "[Boolean] true"},
-    {"PI > 4", "[Boolean] false"},
-    {"1*0 == 0", "[Boolean] true"},
-    {"5 % 2 + 3 * 2 - 4 / 2 >= 5", "[Boolean] true"},
-    {"sin(PI / 2) + 1 < 2", "[Boolean] false"},
-    {"1.5 <= 1.5002", "[Boolean] true"},
-    {"true and not true or not true", "[Boolean] false"},
-    {"cos(0) <> 1", "[Boolean] false"},
-    {"(3 > 1.75) and true or false", "[Boolean] true"},
-    {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
-};
+    } boolean_test[] = {
+        {"true", "[Boolean] true"},
+        {"true and true", "[Boolean] true"},
+        {"false or false", "[Boolean] false"},
+        {"not false", "[Boolean] true"},
+        {"PI > 4", "[Boolean] false"},
+        {"1*0 == 0", "[Boolean] true"},
+        {"5 % 2 + 3 * 2 - 4 / 2 >= 5", "[Boolean] true"},
+        {"sin(PI / 2) + 1 < 2", "[Boolean] false"},
+        {"1.5 <= 1.5002", "[Boolean] true"},
+        {"true and not true or not true", "[Boolean] false"},
+        {"cos(0) <> 1", "[Boolean] false"},
+        {"(3 > 1.75) and true or false", "[Boolean] true"},
+        {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
+    };
+    
+    if(strcmp(input_file, "tests/arit_test.txt") == 0) {
+        total_results = sizeof(arit_test) / sizeof(arit_test[0]);
+        passed = 0;
+        printf("\n\n\n========================================| %d aritmetic operations tests to pass... |========================================\n\n", total_results);
+        printf("\n%d aritmetic tests to pass...\n", total_results);
+        for (index = 0; index < total_results; index++) {
+            fgets(buffer, BUFFER_LENGTH, file);
 
-    int total_results = sizeof(arit_test) / sizeof(arit_test[0]);
+            /* Remove the newline character, if it exists */
+            buffer[strcspn(buffer, "\n")] = '\0';
 
-    int index;
-    int passed = 0;
-    printf("\n\n\n========================================| %d aritmetic operations tests to pass... |========================================\n\n", total_results);
-    printf("\n%d aritmetic tests to pass...\n", total_results);
-    for (index = 0; index < total_results; index++) {
-        fgets(buffer, 511, file);
-
-        /* Remove the newline character, if it exists */
-        buffer[strcspn(buffer, "\n")] = '\0';
-
-        /* Compare the result with the expected value (with a little tolerance) */
-        if (strcmp(buffer, arit_test[index].output) > EPSILON) {
-            printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
-            printf("Result mismatch at line %d: expected %s, got %s\n\n", index + 1, arit_test[index].output, buffer);
-        } else {
-            passed++;
-            printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
+            /* Compare the result with the expected value (with a little tolerance) */
+            if (strcmp(buffer, arit_test[index].output) > EPSILON) {
+                printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
+                printf("Result mismatch at line %d: expected %s, got %s\n\n", index + 1, arit_test[index].output, buffer);
+            } else {
+                passed++;
+                printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
+            }
         }
     }
+    else if(strcmp(input_file, "tests/string_test.txt") == 0) {
+        total_results = sizeof(string_test) / sizeof(string_test[0]);
 
-    total_results = sizeof(string_test) / sizeof(string_test[0]);
+        passed = 0;
+        printf("\n\n\n========================================| %d string concat tests to pass... |========================================\n\n", total_results);
+        for (index = 0; index < total_results; index++) {
+            fgets(buffer, BUFFER_LENGTH, file);
 
-    passed = 0;
-    printf("\n\n\n========================================| %d string concat tests to pass... |========================================\n\n", total_results);
-    for (index = 0; index < total_results; index++) {
-        fgets(buffer, 511, file);
+            /* Remove the newline character, if it exists */
+            buffer[strcspn(buffer, "\n")] = '\0';
 
-        /* Remove the newline character, if it exists */
-        buffer[strcspn(buffer, "\n")] = '\0';
-
-        /* Compare the result with the expected string */
-        if (strcmp(buffer, string_test[index].output)) {
-            printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
-            printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, string_test[index].output, buffer);
-        } else {
-            passed++;
-            printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
+            /* Compare the result with the expected string */
+            if (strcmp(buffer, string_test[index].output)) {
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
+                printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, string_test[index].output, buffer);
+            } else {
+                passed++;
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, string_test[index].input, buffer);
+            }
         }
     }
+    else if(strcmp(input_file, "tests/bool_test.txt") == 0) {
+        total_results = sizeof(boolean_test) / sizeof(boolean_test[0]);
 
-    total_results = sizeof(boolean_test) / sizeof(boolean_test[0]);
+        passed = 0;
+        printf("\n\n\n========================================| %d boolean tests to pass... |========================================\n\n", total_results);
+        for (index = 0; index < total_results; index++) {
+            fgets(buffer, BUFFER_LENGTH, file);
 
-    passed = 0;
-    printf("\n\n\n========================================| %d boolean tests to pass... |========================================\n\n", total_results);
-    for (index = 0; index < total_results; index++) {
-        fgets(buffer, 511, file);
+            /* Remove the newline character, if it exists */
+            buffer[strcspn(buffer, "\n")] = '\0';
 
-        /* Remove the newline character, if it exists */
-        buffer[strcspn(buffer, "\n")] = '\0';
-
-        /* Compare the result with the expected boolean result */
-        if (strcmp(buffer, boolean_test[index].output)) {
-            printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
-            printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, boolean_test[index].output, buffer);
-        } else {
-            passed++;
-            printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
+            /* Compare the result with the expected boolean result */
+            if (strcmp(buffer, boolean_test[index].output)) {
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
+                printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, boolean_test[index].output, buffer);
+            } else {
+                passed++;
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
+            }
         }
     }
 

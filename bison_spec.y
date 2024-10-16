@@ -80,27 +80,29 @@ stmnt_list:
 stmnt:
     ID ASSIGN expr  {   
                         if(!err) {
+                            to_str = type_to_str($1.id_val.val_type);
                             $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
                             if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
-                                fprintf(yyout, "[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival);
+                                fprintf(yyout, "[%s] %s = %d\n", to_str, $1.lexema, $3.ival);
                                 $$.val_type = INT_TYPE; 
                                 $$.ival = $3.ival; 
                             }
                             else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
-                                fprintf(yyout, "[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval);
+                                fprintf(yyout, "[%s] %s = %g\n", to_str, $1.lexema, $3.fval);
                                 $$.val_type = FLOAT_TYPE; 
                                 $$.fval = $3.fval;
                             }
                             else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
-                                fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false");
+                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.lexema, ($3.bval == 1) ? "true" : "false");
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $3.bval;
                             }
                             else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
-                                fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval);
+                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.lexema, $3.sval);
                                 $$.val_type = STRING_TYPE; 
                                 $$.sval = $3.sval;
                             }
+                            free(to_str);
                         }
                     }
   | expr  {
@@ -141,7 +143,9 @@ expr:
                             $$.fval = -$2.fval; 
                         }
                         else {
-                            sprintf(err_mssg, "Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type));
+                            to_str = type_to_str($2.val_type);
+                            sprintf(err_mssg, "Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", to_str);
+                            free(to_str);
                             custom_err_mssg(err_mssg); 
                         }
                     }
@@ -155,7 +159,9 @@ expr:
                             $$.fval = +$2.fval; 
                         }
                         else { 
-                            sprintf(err_mssg, "Unary Plus Operator (+) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type)); 
+                            to_str = type_to_str($2.val_type);
+                            sprintf(err_mssg, "Unary Plus Operator (+) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", to_str); 
+                            free(to_str);
                             custom_err_mssg(err_mssg); 
                         }
                     }
@@ -411,21 +417,26 @@ func_expr:
                                 $$.ival = strlen($3.sval); 
                             }
                             else { 
-                                sprintf(err_mssg, "LEN(String str) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); 
+                                to_str = type_to_str($3.val_type);
+                                sprintf(err_mssg, "LEN(String str) 1st parameter expects type 'String' but it got type '%s'", to_str); 
+                                free(to_str);
                                 custom_err_mssg(err_mssg); 
                             }
                         }
   | SUBSTR OP func_expr func_expr func_expr CP  { /* Can only use SUBSTR() with a string */
                                                     if ($3.val_type != STRING_TYPE) { 
-                                                        sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", type_to_str($3.val_type)); 
+                                                        to_str = type_to_str($3.val_type);
+                                                        sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", to_str); 
                                                         custom_err_mssg(err_mssg); 
                                                     }
                                                     else if ($4.val_type != INT_TYPE) { 
-                                                        sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 2nd parameter expects type 'Integer' but it got type '%s'", type_to_str($4.val_type)); 
+                                                        to_str = type_to_str($4.val_type);
+                                                        sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 2nd parameter expects type 'Integer' but it got type '%s'", to_str); 
                                                         custom_err_mssg(err_mssg); 
                                                     }
                                                     else if ($5.val_type != INT_TYPE) { 
-                                                        sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 3rd parameter expects type 'Integer' but it got type '%s'", type_to_str($5.val_type)); 
+                                                        to_str = type_to_str($5.val_type);
+                                                        sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 3rd parameter expects type 'Integer' but it got type '%s'", to_str); 
                                                         custom_err_mssg(err_mssg); 
                                                     }
                                                     else {
@@ -435,6 +446,7 @@ func_expr:
                                                         $$.val_type = STRING_TYPE; 
                                                         $$.sval = str;
                                                     }
+                                                    free(to_str);
                                                 }
   | term_expr
 ;

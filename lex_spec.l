@@ -76,6 +76,7 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
                 yylval.id.lenght = yyleng;
                 yylval.id.line = yylineno;
                 yylval.id.id_val.val_type = UNKNOWN_TYPE;
+                free(yylval.id.lexema);
                 return ID;
             }
 {COMM}      {}

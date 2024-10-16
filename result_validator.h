@@ -7,6 +7,6 @@
 #include <math.h>
 
 /* Function to compare results with expected values */
-int validate_results(const char *output_file);
+int validate_results(const char *input_file, const char *output_file);
 
 #endif

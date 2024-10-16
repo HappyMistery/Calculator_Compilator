@@ -20,10 +20,8 @@ int main(int argc, char *argv[])
         if (error == EXIT_SUCCESS) {
             error = analisi_semantica();
 
-            if (error == EXIT_SUCCESS) {
-            printf("The compilation has been successful\n");
-            } else {
-            printf("ERROR");
+            if (error != EXIT_SUCCESS) {
+                printf("ERROR");
             }
 
             error = end_analisi_sintactica();
@@ -44,6 +42,6 @@ int main(int argc, char *argv[])
     } else {
         printf("\nUsage: %s INPUT_FILE OUTPUT_FILE\n",argv[0]);
     }
-    error = validate_results(argv[2]);
+    error = validate_results(argv[1], argv[2]);
     return EXIT_SUCCESS;
 }
