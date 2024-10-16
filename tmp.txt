@@ -1,0 +1,9 @@
+
+
+10/0
+5%0
+"hello" ** 2
+"abc" > 123
+5 and "hello"
+sin(true)
+"123abc"

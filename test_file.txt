@@ -1,14 +1,14 @@
 // Basic integer operations
-7 + 3               // 10
-10 - 4              // 6
-3 * 4               // 12
-5 % 2               // 1
-2 ** 3              // 8
+7 + 3               
+10 - 4              
+3 * 4               
+5 % 2               
+2 ** 3              
 
 // Complex integer operations
-(7 + 3) * 2 - 5    // 15
-(10 - 4) / 2 + 8 * 3 // 26
-3 * (4 + 2 ** 3)   // 24
+(7 + 3) * 2 - 5    
+(10 - 4) / 2 + 8 * 3
+3 * (4 + 2 ** 3)
 5 % 2 + 3 * 2 - LEN("hola") / 2 // 5
 
 // Basic float operations
@@ -114,16 +114,8 @@ cos(0) <> 1
 (3 > 1.75) and true or false
 (not (PI <> PI) or false) and (true and not(false and (4>=5)))
 
-/* Error handling */
--"hello
+// Error handling
+-"hello"
 +true
 5 + false
 "hello" - 3
-3 * true
-10/0
-5%0
-"hello" ** 2
-"abc" > 123
-5 and "hello"
-sin(true)
-"123abc"

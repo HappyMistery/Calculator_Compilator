@@ -24,6 +24,8 @@
   void custom_err_mssg(const char *s);
 
   char err_mssg[150];
+  bool err = false;
+  char *to_str;
 %}
 %define parse.error verbose
 %locations
@@ -76,65 +78,69 @@ stmnt_list:
 ;
 
 stmnt:
-    ID ASSIGN expr  { 
-                        $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
-                        if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
-                            fprintf(yyout, "[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival);
-                            $$.val_type = INT_TYPE; 
-                            $$.ival = $3.ival; 
-                        }
-                        else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
-                            fprintf(yyout, "[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval);
-                            $$.val_type = FLOAT_TYPE; 
-                            $$.fval = $3.fval;
-                        }
-                        else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
-                            fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false");
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $3.bval;
-                        }
-                        else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
-                            fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval);
-                            $$.val_type = STRING_TYPE; 
-                            $$.sval = $3.sval;
+    ID ASSIGN expr  {   
+                        if(!err) {
+                            $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
+                            if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
+                                fprintf(yyout, "[%s] %s = %d\n", type_to_str($1.id_val.val_type), $1.lexema, $3.ival);
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $3.ival; 
+                            }
+                            else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
+                                fprintf(yyout, "[%s] %s = %g\n", type_to_str($1.id_val.val_type), $1.lexema, $3.fval);
+                                $$.val_type = FLOAT_TYPE; 
+                                $$.fval = $3.fval;
+                            }
+                            else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
+                                fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, ($3.bval == 1) ? "true" : "false");
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $3.bval;
+                            }
+                            else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
+                                fprintf(yyout, "[%s] %s = %s\n", type_to_str($1.id_val.val_type), $1.lexema, $3.sval);
+                                $$.val_type = STRING_TYPE; 
+                                $$.sval = $3.sval;
+                            }
                         }
                     }
   | expr  {
-            if 
-            ($$.val_type == INT_TYPE) { 
-                $$.val_type = INT_TYPE; 
-                $$.ival = $1.ival; 
-                fprintf(yyout, "[Integer] %d\n", $1.ival); 
+            if(!err) {
+                if 
+                ($$.val_type == INT_TYPE) { 
+                    $$.val_type = INT_TYPE; 
+                    $$.ival = $1.ival; 
+                    fprintf(yyout, "[Integer] %d\n", $1.ival); 
+                }
+                else if ($$.val_type == FLOAT_TYPE) { 
+                    $$.val_type = FLOAT_TYPE; 
+                    $$.ival = $1.fval; 
+                    fprintf(yyout, "[Float] %g\n", $1.fval); 
+                }
+                else if ($$.val_type == BOOL_TYPE) { 
+                    $$.val_type = BOOL_TYPE; 
+                    $$.bval = $1.bval; 
+                    fprintf(yyout, "[Boolean] %s\n", ($1.bval == 1) ? "true" : "false"); 
+                }
+                else if ($$.val_type == STRING_TYPE) { 
+                    $$.val_type = STRING_TYPE; 
+                    $$.sval = $1.sval; 
+                    fprintf(yyout, "[String] %s\n", $1.sval); 
+                }
             }
-            else if ($$.val_type == FLOAT_TYPE) { 
-                $$.val_type = FLOAT_TYPE; 
-                $$.ival = $1.fval; 
-                fprintf(yyout, "[Float] %g\n", $1.fval); 
-            }
-            else if ($$.val_type == BOOL_TYPE) { 
-                $$.val_type = BOOL_TYPE; 
-                $$.bval = $1.bval; 
-                fprintf(yyout, "[Boolean] %s\n", ($1.bval == 1) ? "true" : "false"); 
-            }
-            else if ($$.val_type == STRING_TYPE) { 
-                $$.val_type = STRING_TYPE; 
-                $$.sval = $1.sval; 
-                fprintf(yyout, "[String] %s\n", $1.sval); 
-            }
-          }
+        }
 ;
 
 expr:
     SUB mult_expr   { /* Can only use Unary Minus Operator (-) with a number */
-                        if ($2.val_type == INT_TYPE) { 
+                        if ($2.val_type == INT_TYPE) {
                             $$.val_type = INT_TYPE; 
                             $$.ival = -$2.ival; 
                         }
-                        else if ($2.val_type == FLOAT_TYPE) { 
+                        else if ($2.val_type == FLOAT_TYPE) {
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = -$2.fval; 
                         }
-                        else { 
+                        else {
                             sprintf(err_mssg, "Unary Minus Operator (-) cannot be applied to type '%s'. Only type 'Integer' and 'Float'", type_to_str($2.val_type));
                             custom_err_mssg(err_mssg); 
                         }
@@ -284,11 +290,12 @@ mult_expr:
                                     custom_err_mssg("Division (/) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Division (/) operator cannot be applied to type 'String'");
-                                else if ($3.fval < 0.000001 && $3.fval > -0.000001) 
+                                else if ($3.ival == 0) {
+                                    printf("DIVISON BY ZERO\n");
                                     custom_err_mssg("Division by zero"); /* If the divider is 0, error*/
-                                else { /* If the divider is not 0, divide*/
-                                  $$.val_type = FLOAT_TYPE; 
-                                  $$.fval = $1.fval / $3.fval;
+                                } else { /* If the divider is not 0, divide*/
+                                    $$.val_type = FLOAT_TYPE; 
+                                    $$.fval = $1.fval / $3.fval;
                                 }
                             }
   | mult_expr MOD exp_expr  { 
@@ -433,19 +440,19 @@ func_expr:
 ;
 
 term_expr:
-    INT         {  
+    INT         {
                     $$.val_type = INT_TYPE; 
                     $$.ival = $1; 
                 }
-  | FLOAT       {  
+  | FLOAT       {
                     $$.val_type = FLOAT_TYPE; 
                     $$.fval = $1; 
                 }
-  | BOOL        {  
+  | BOOL        {
                     $$.val_type = BOOL_TYPE; 
                     $$.bval = $1; 
                 }      
-  | STRING      {  
+  | STRING      {
                     $$.val_type = STRING_TYPE; 
                     $$.sval = $1; 
                 }
@@ -485,6 +492,7 @@ void cast_vals_to_flt(value_info *op1, value_info *op2) {
 }
 
 void custom_err_mssg(const char *s) {
+    err = true;
     if (error_log == NULL) {
         error_log = fopen("error_log.txt", "w");
         if (!error_log) {

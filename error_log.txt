@@ -1,2 +1,4 @@
-Error at line 2: Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'
-Error at line 4: Division by zero
+Error at line 119: Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'
+Error at line 120: Unary Plus Operator (+) cannot be applied to type 'Boolean'. Only type 'Integer' and 'Float'
+Error at line 121: Addition (+) operator cannot be applied to type 'Boolean'
+Error at line 122: Subtraction (-) operator cannot be applied to type 'String'
