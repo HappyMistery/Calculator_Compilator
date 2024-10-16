@@ -9,4 +9,3 @@
 "abc" > 123
 5 and "hello"
 sin(true)
-"123abc"

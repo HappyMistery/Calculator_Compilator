@@ -30,9 +30,14 @@ char* result_to_string(char* type, double res) {
  
 int validate_results(const char *input_file, const char *output_file) {
     FILE *file = fopen(output_file, "r");
+    FILE *err_file = fopen("error_log.txt", "r");
     char buffer[BUFFER_LENGTH];
     if (!file) {
         printf("Failed to open result file: %s\n", output_file);
+        return EXIT_FAILURE;
+    }
+    if (!err_file) {
+        printf("Failed to open error log file: error_log.txt\n");
         return EXIT_FAILURE;
     }
 
@@ -132,7 +137,23 @@ int validate_results(const char *input_file, const char *output_file) {
         {"(3 > 1.75) and true or false", "[Boolean] true"},
         {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
     };
-    
+
+    const struct {
+    const char* input;
+    const char* output;
+    } error_test[] = {
+        {"-\"hello\"", " Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'"},
+        {"+true",  " Unary Plus Operator (+) cannot be applied to type 'Boolean'. Only type 'Integer' and 'Float'"},
+        {"5 + false", " Addition (+) operator cannot be applied to type 'Boolean'"},
+        {"\"hello\" - 3", " Subtraction (-) operator cannot be applied to type 'String'"},
+        {"10/0", " Division by zero"},
+        {"5%0", " Modulo by zero"},
+        {"\"hello\" ** 2", " Power (**) operator cannot be applied to type 'String'"},
+        {"\"abc\" > 123", " Higher (>) operator cannot be applied to type 'String'"},
+        {"5 and \"hello\"", " And (and) operator can only be applied to type 'Boolean'"},
+        {"sin(true)", " sin() cannot take a type 'Boolean' as a parameter"},
+    };
+
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {
         total_results = sizeof(arit_test) / sizeof(arit_test[0]);
         passed = 0;
@@ -193,6 +214,39 @@ int validate_results(const char *input_file, const char *output_file) {
             } else {
                 passed++;
                 printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
+            }
+        }
+    }
+    else if(strcmp(input_file, "tests/error_test.txt") == 0) {
+        total_results = sizeof(error_test) / sizeof(error_test[0]);
+
+        passed = 0;
+        printf("\n\n\n========================================| %d error tests to pass... |========================================\n\n", total_results);
+        for (index = 0; index < total_results; index++) {
+            fgets(buffer, BUFFER_LENGTH, err_file);
+
+            /* Remove the newline character, if it exists */
+            buffer[strcspn(buffer, "\n")] = '\0';
+
+            char temp[256];
+            strcpy(temp, buffer);
+
+            /* Find the first occurrence of ':' */
+            char *colon_pos = strchr(temp, ':');
+            
+            if (colon_pos != NULL) {
+                /* Split the string into two parts */
+                *colon_pos = '\0';  /* Terminate the first part */
+                strcpy(buffer, colon_pos + 1); /* Copy the part after ':' */
+            }
+
+            /* Compare the result with the expected error output */
+            if (strcmp(buffer, error_test[index].output)) {
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, error_test[index].input, buffer);
+                printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, error_test[index].output, buffer);
+            } else {
+                passed++;
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, error_test[index].input, buffer);
             }
         }
     }

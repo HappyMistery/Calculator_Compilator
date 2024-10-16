@@ -297,7 +297,6 @@ mult_expr:
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Division (/) operator cannot be applied to type 'String'");
                                 else if ($3.ival == 0) {
-                                    printf("DIVISON BY ZERO\n");
                                     custom_err_mssg("Division by zero"); /* If the divider is 0, error*/
                                 } else { /* If the divider is not 0, divide*/
                                     $$.val_type = FLOAT_TYPE; 
