@@ -80,8 +80,8 @@ stmnt_list:
 stmnt:
     ID ASSIGN expr  {   
                         if(!err) {
-                            to_str = type_to_str($1.id_val.val_type);
                             $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
+                            to_str = type_to_str($1.id_val.val_type);
                             if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
                                 fprintf(yyout, "[%s] %s = %d\n", to_str, $1.lexema, $3.ival);
                                 $$.val_type = INT_TYPE; 
@@ -439,7 +439,7 @@ func_expr:
                                                         custom_err_mssg(err_mssg); 
                                                     }
                                                     else {
-                                                        char *str = (char *)malloc($5.ival + 1); /* Ensure enough memory for the final substring */
+                                                        char *str = (char *)malloc($5.ival + 2); /* Ensure enough memory for the final substring */
                                                         memcpy(str, $3.sval+$4.ival, $5.ival); 
                                                         str[$5.ival] = '\0'; 
                                                         $$.val_type = STRING_TYPE; 

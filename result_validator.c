@@ -92,7 +92,7 @@ int validate_results(const char *input_file, const char *output_file) {
         {"E**2", result_to_string("float", pow(M_E, 2))}, 
         {"sin(PI)", result_to_string("float", sin(M_PI))}, 
         {"cos(E)", result_to_string("float", cos(M_E))},
-        {"8 / PI", result_to_string("float", 8 / M_PI)}, 
+        {"LEN(\"paraguas\") / PI", result_to_string("float", strlen("paraguas") / M_PI)}, 
         {"sin(PI / 2) + 1", result_to_string("float", sin(M_PI / 2) + 1)}, 
         {"(7 + E) * 3 - sin(PI)", result_to_string("float", (7 + M_E) * 3 - sin(M_PI))}, 
         {"10 - (3.5 * PI) + E**2 - LEN(\"Piernas al fallo\") / 3.0", result_to_string("float", 10 - (3.5 * M_PI) + pow(M_E, 2) - strlen("Piernas al fallo") / 3.0)}
@@ -117,6 +117,8 @@ int validate_results(const char *input_file, const char *output_file) {
         {"\"To say that 1 == 1 is \" + true and (1==1)", "[String] To say that 1 == 1 is true"},
         {"\"The quick \" + \"brown \" + \"fox \" + \"jumps\"", "[String] The quick brown fox jumps"},
         {"\"Concatenating \" + \"strings \" + \"in C\"", "[String] Concatenating strings in C"},
+        {"\"hola\" + SUBSTR(\"hola pepe\" 5 4)", "[String] holapepe"},
+        {"LEN(\"NO COnfLIcts\") + \" finally\"", "[String] 12 finally"}
     };
 
     const struct {
@@ -152,6 +154,7 @@ int validate_results(const char *input_file, const char *output_file) {
         {"\"abc\" > 123", " Higher (>) operator cannot be applied to type 'String'"},
         {"5 and \"hello\"", " And (and) operator can only be applied to type 'Boolean'"},
         {"sin(true)", " sin() cannot take a type 'Boolean' as a parameter"},
+        {"tan(PI/2)", " Indefinition error"}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {

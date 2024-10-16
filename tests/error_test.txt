@@ -9,3 +9,4 @@
 "abc" > 123
 5 and "hello"
 sin(true)
+tan(PI/2)

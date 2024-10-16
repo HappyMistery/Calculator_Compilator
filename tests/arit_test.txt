@@ -1,14 +1,14 @@
 // Basic integer operations
-7 + 3               
-10 - 4              
-3 * 4               
-5 % 2               
-2 ** 3              
+7 + 3             // 10
+10 - 4            // 6
+3 * 4             // 12  
+5 % 2             // 1 
+2 ** 3           // 8  
 
 // Complex integer operations
-(7 + 3) * 2 - 5    
-(10 - 4) / 2 + 8 * 3
-3 * (4 + 2 ** 3)
+(7 + 3) * 2 - 5    // 15
+(10 - 4) / 2 + 8 * 3   // 27
+3 * (4 + 2 ** 3)        // 36
 5 % 2 + 3 * 2 - LEN("hola") / 2 // 5
 
 // Basic float operations
@@ -22,10 +22,10 @@
 3 ** 2.5         // 15.5885
 
 // Complex mixed operations (int and float)
-(7 + 2.5) * 3 - 4 / 2 + 1.5 // 24.5
-10 - (3.5 * 2) + LEN("perfecto")**2 - 4 / 3.0 // 62.333
-(3 * 2.0 + 1.5**2) - 7 / 3 // 5.75
-(5%2.5 + 4.5) * 3 - 2 / 1.0 // 12.0
+(7 + 2.5) * 3 - 4 / 2 + 1.5                     // 28
+10 - (3.5 * 2) + LEN("perfecto")**2 - 4 / 3.0   // 65.6667
+(3 * 2.0 + 1.5**2) - 7 / 3                      // 5.91667
+(5%2.5 + 4.5) * 3 - 2 / 1.0                     // 11.5
 
 // Basic trigonometric operations (int and float)
 sin(0)            // 0
@@ -37,12 +37,12 @@ tan(PI / 4)      // 1
 
 // Complex trigonometric operations (int and float)
 cos(PI / 3)      // 0.5
-tan(PI / 3)      // 1.732051
+tan(PI / 3)      // 1.73205
 
 // Basic mixed operations (int and trig)
-LEN("Las estrellas brillan de noche") + sin(30)     // 30.499
-45 - cos(30)     // 44.134
-60 * tan(30)     // 34.641
+LEN("Las estrellas brillan de noche") + sin(30)     // 29.012
+45 - cos(30)     // 44.8457
+60 * tan(30)     // -384.32
 
 // Basic mixed operations (float and trig)
 7.5 + sin(PI / 6) // 8.0
@@ -50,12 +50,12 @@ LEN("Las estrellas brillan de noche") + sin(30)     // 30.499
 3.5 * tan(PI / 3) // 6.06218
 
 // Complex mixed operations (int and trig)
-(30 + sin(30)) * 2 - 4 / 2 // 61.999
-10 - (3 * cos(30)) + 5 - 3 // 11.464
+(30 + sin(30)) * 2 - 4 / 2 // 56.0239
+10 - (3 * cos(30)) + 5 - 3 // 11.5372
 
 // Complex mixed operations (float and trig)
-(7.5 + sin(PI / 4)) * 2 - 1.5 // 14.414
-10.2 - (3 * cos(PI / LEN("duck"))) + 1.5 // 11.914
+(7.5 + sin(PI / 4)) * 2 - 1.5 // 14.9142
+10.2 - (3 * cos(PI / LEN("duck"))) + 1.5 // 9.57868
 
 // Basic constant operations (PI and E)
 PI                 // 3.14159
@@ -63,15 +63,15 @@ E                  // 2.71828
 PI * E             // 8.53973
 
 // Complex constant operations (PI and E)
-PI**4        // 9.8696
+PI**4        // 97.4091
 E**2         // 7.38906
 sin(PI)           // 0
 cos(E)            // -0.91173
 
 // Basic mixed operations (int, float, trig, PI, and E)
-8 / PI            // 2.54648
-sin(PI / 2) + 1   // 2
+LEN("paraguas") / PI            // 2.54648
+sin(PI / 2) + 1                 // 2
 
 // Complex mixed operations (int, float, trig, PI, and E)
-(7 + E) * 3 - sin(PI) // 20.155
-10 - (3.5 * PI) + E**2 - LEN("Piernas al fallo") / 3.0 // 1.080
+(7 + E) * 3 - sin(PI)                                           // 29.1548
+10 - (3.5 * PI) + E**2 - LEN("Piernas al fallo") / 3.0          // 1.06015
