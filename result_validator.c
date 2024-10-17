@@ -50,7 +50,10 @@ int validate_results(const char *input_file, const char *output_file) {
         {"10 - 4", result_to_string("int", 10 - 4)}, 
         {"3 * 4", result_to_string("int", 3 * 4)}, 
         {"5 % 2", result_to_string("int", 5 % 2)}, 
-        {"2 ** 3", result_to_string("int", pow(2, 3))}, 
+        {"2 ** 3", result_to_string("int", pow(2, 3))},
+        {"15 b8", "[Integer] 17"},
+        {"123 b16", "[Integer] 7B"},
+        {"7 b2", "[Integer] 111"},
         {"(7 + 3) * 2 - 5", result_to_string("int", (7 + 3) * 2 - 5)}, 
         {"(10 - 4) / 2 + 8 * 3", result_to_string("float", (10 - 4) / 2 + 8 * 3)}, 
         {"3 * (4 + 2 ** 3)", result_to_string("int", 3 * (4 + pow(2, 3)))}, 
@@ -154,7 +157,9 @@ int validate_results(const char *input_file, const char *output_file) {
         {"\"abc\" > 123", " Higher (>) operator cannot be applied to type 'String'"},
         {"5 and \"hello\"", " And (and) operator can only be applied to type 'Boolean'"},
         {"sin(true)", " sin() cannot take a type 'Boolean' as a parameter"},
-        {"tan(PI/2)", " Indefinition error"}
+        {"tan(PI/2)", " Indefinition error"},
+        {"false b8", " Conversion to octal (b8) cannot be applied to type 'Boolean'. Only type 'Integer'"},
+        {"\"testing\" b16", " Conversion to hexadecimal (b16) cannot be applied to type 'String'. Only type 'Integer'"}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {

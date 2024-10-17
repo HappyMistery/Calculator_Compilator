@@ -62,7 +62,7 @@ HEX [Bb]16
 {OCT}       { return OCT; }
 {BIN}       { return BIN; }
 {HEX}       { return HEX; }
-{DEC}       { return DEC; }
+{DEC}       {}
 
 
 {INT}       { yylval.ival = atoi(yytext); return INT; }
@@ -83,7 +83,6 @@ HEX [Bb]16
                 yylval.id.line = yylineno;
                 yylval.id.id_val.val_type = UNKNOWN_TYPE;
                 yylval.id.mode = NO_MODE;
-                free(yylval.id.name);
                 return ID;
             }
 {COMM}      {}

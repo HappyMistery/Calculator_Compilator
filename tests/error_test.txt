@@ -10,3 +10,5 @@
 5 and "hello"
 sin(true)
 tan(PI/2)
+false b8
+"testing" b16

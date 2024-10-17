@@ -80,8 +80,7 @@ stmnt_list:
 ;
 
 stmnt:
-        ID ASSIGN expr  {   
-                            printf("%s\n", $1.name);
+        ID ASSIGN expr  {
                             if(!err) {
                                 $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                 to_str = type_to_str($1.id_val.val_type);
@@ -106,8 +105,69 @@ stmnt:
                                     $$.sval = $3.sval;
                                 }
                                 free(to_str);
-                            }
+                            } 
+                            err = false;
                         }
+    |   ID ASSIGN expr BIN  {   
+                                if(!err) {
+                                    if ($3.val_type != INT_TYPE) {
+                                        to_str = type_to_str($3.val_type);
+                                        sprintf(err_mssg, "Conversion to binary (b2) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                        free(to_str);
+                                        custom_err_mssg(err_mssg);
+                                    }
+                                    else {
+                                        $1.mode = BIN_MODE;
+                                        $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                                        to_str = type_to_str($1.id_val.val_type);
+                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, BIN_MODE));
+                                        $$.val_type = INT_TYPE; 
+                                        $$.ival = $3.ival;
+                                        free(to_str);
+                                    }
+                                } 
+                                err = false;
+                            }
+    |   ID ASSIGN expr OCT  {   
+                                if(!err) {
+                                    if ($3.val_type != INT_TYPE) {
+                                        to_str = type_to_str($3.val_type);
+                                        sprintf(err_mssg, "Conversion to octal (b8) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                        free(to_str);
+                                        custom_err_mssg(err_mssg);
+                                    }
+                                    else {
+                                        $1.mode = OCT_MODE;
+                                        $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                                        to_str = type_to_str($1.id_val.val_type);
+                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, OCT_MODE));
+                                        $$.val_type = INT_TYPE; 
+                                        $$.ival = $3.ival;
+                                        free(to_str);
+                                    }
+                                } 
+                                err = false;
+                            }
+    |   ID ASSIGN expr HEX  {   
+                                if(!err) {
+                                    if ($3.val_type != INT_TYPE) {
+                                        to_str = type_to_str($3.val_type);
+                                        sprintf(err_mssg, "Conversion to hexadecimal (b16) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                        free(to_str);
+                                        custom_err_mssg(err_mssg);
+                                    }
+                                    else {
+                                        $1.mode = HEX_MODE;
+                                        $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                                        to_str = type_to_str($1.id_val.val_type);
+                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, HEX_MODE));
+                                        $$.val_type = INT_TYPE; 
+                                        $$.ival = $3.ival;
+                                        free(to_str);
+                                    }
+                                } 
+                                err = false;
+                            }
     |   expr    {
                     if(!err) {
                         if ($$.val_type == INT_TYPE) { 
@@ -130,29 +190,56 @@ stmnt:
                             $$.sval = $1.sval; 
                             fprintf(yyout, "[String] %s\n", $1.sval); 
                         }
-                    }
+                    } 
+                    err = false;
                 }
-    |   ID ASSIGN expr BIN  {   
-                                if(!err) {
-                                    $1.mode = BIN_MODE;
-                                    $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
-                                    to_str = type_to_str($1.id_val.val_type);
-                                    if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
-                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, BIN_MODE));
-                                        $$.val_type = INT_TYPE; 
-                                        $$.ival = $3.ival; 
-                                    }
-                                    free(to_str);
-                                }
-                            }
     |   expr BIN    {
                         if(!err) {
-                            if ($$.val_type == INT_TYPE) {
+                            if ($$.val_type != INT_TYPE) {
+                                to_str = type_to_str($1.val_type);
+                                sprintf(err_mssg, "Conversion to binary (b2) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                free(to_str);
+                                custom_err_mssg(err_mssg);
+                            }   
+                            else {
                                 fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, BIN_MODE));
                                 $$.val_type = INT_TYPE; 
                                 $$.ival = $1.ival;  
                             }
-                        }
+                        } 
+                        err = false;
+                    }
+    |   expr OCT    {
+                        if(!err) {
+                            if ($$.val_type != INT_TYPE) {
+                                to_str = type_to_str($1.val_type);
+                                sprintf(err_mssg, "Conversion to octal (b8) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                free(to_str);
+                                custom_err_mssg(err_mssg);
+                            }   
+                            else {
+                                fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, OCT_MODE));
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $1.ival;  
+                            }
+                        } 
+                        err = false;
+                    }
+    |   expr HEX    {
+                        if(!err) {
+                            if ($$.val_type != INT_TYPE) {
+                                to_str = type_to_str($1.val_type);
+                                sprintf(err_mssg, "Conversion to hexadecimal (b16) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                free(to_str);
+                                custom_err_mssg(err_mssg);
+                            }   
+                            else {
+                                fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, HEX_MODE));
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $1.ival;  
+                            }
+                        } 
+                        err = false;
                     }
 ;
 
@@ -609,6 +696,7 @@ void custom_err_mssg(const char *s) {
             return;
         }
     }
+    printf("ERROR\n");
     fprintf(error_log, "Error at line %d: %s\n", yylineno, s);
     fflush(error_log);
 }
