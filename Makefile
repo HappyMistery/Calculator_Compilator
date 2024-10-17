@@ -26,7 +26,7 @@ SRC_INTERACTIVE = main_interactive.c
 BIN = calc_compiler.exe
 BIN_INTERACTIVE = calc_compiler_interactive.exe
 
-SRC_EXTRA = dades.c funcions.c result_validator.c
+SRC_EXTRA = dades.c funcions.c result_validator.c symtab.c
 
 LFLAGS = -n -o $*.c
 YFLAGS = -d -v
@@ -49,6 +49,7 @@ $(BIN_INTERACTIVE): $(OBJ)
 $(OBJ): $(LEX_OUT) $(YACC_OUT)
 	$(CC) $(CFLAGS) -c $(LEX_OUT)
 	$(CC) $(CFLAGS) -c $(YACC_OUT_C)
+	$(CC) $(CFLAGS) -c symtab.c
 
 $(LEX_OUT): $(SRC_LEX)
 	$(LEX) $(LFLAGS) $(SRC_LEX)

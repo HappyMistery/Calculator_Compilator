@@ -11,20 +11,7 @@
 
 #include "dades.h"
 /* The type of the value field of symbol table entries                      */
-typedef union{
-    struct {
-        char *lexema;
-        int lenght;
-        int line;
-        value_info id_val;
-        mode mode;
-    } id;
-    int ival;
-    float fval;
-    char* sval;
-    value_info expr_val;
-    void *sense_valor;
-} sym_value_type;          /* you will need to replace this    */
+typedef id sym_value_type;          /* you will need to replace this    */
                                         /* with a declaration appropriate   */
                                         /* for your application.            */
 					/*Ho subtituim per un unio o struct */
@@ -155,7 +142,7 @@ typedef const char * sym_name_type;     /* If you are using something other */
 
 /****************************************************************************/
 /*                                                                          */
-/*                   end of #defines to configure symtab                    /
+/*                   end of #defines to configure symtab                    */
 /*    Most configuration can be accomplished by editing lines above this.   */
 /*                                                                          */
 /****************************************************************************/

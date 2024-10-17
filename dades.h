@@ -29,6 +29,14 @@ typedef struct {
   int bval;
 } value_info;
 
+typedef struct {
+    char *name;
+    int length;
+    int line;
+    value_info id_val;
+    mode mode;
+} id;
+
 
 char *type_to_str(data_type val_type);
 

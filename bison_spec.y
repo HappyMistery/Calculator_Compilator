@@ -7,6 +7,7 @@
   #include <math.h>
   #include "dades.h"
   #include "funcions.h"
+  #include "symtab.h"
   
 
   int yydebug = 1;
@@ -34,16 +35,11 @@
 %code requires {
   #include "dades.h"
   #include "funcions.h"
+  #include "symtab.h"
 }
 
 %union{
-    struct {
-        char *name;
-        int lenght;
-        int line;
-        value_info id_val;
-        mode mode;
-    } id;
+    id id;
     int ival;
     float fval;
     char* sval;
@@ -86,24 +82,21 @@ stmnt:
                                 to_str = type_to_str($1.id_val.val_type);
                                 if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
                                     fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
-                                    $$.val_type = INT_TYPE; 
-                                    $$.ival = $3.ival; 
+                                    $1.id_val.ival = $3.ival;
                                 }
                                 else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
                                     fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
-                                    $$.val_type = FLOAT_TYPE; 
-                                    $$.fval = $3.fval;
+                                    $1.id_val.fval = $3.fval;
                                 }
                                 else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
                                     fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($3.bval == 1) ? "true" : "false");
-                                    $$.val_type = BOOL_TYPE; 
-                                    $$.bval = $3.bval;
+                                    $1.id_val.bval = $3.bval;
                                 }
                                 else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
                                     fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $3.sval);
-                                    $$.val_type = STRING_TYPE; 
-                                    $$.sval = $3.sval;
+                                    $1.id_val.sval = $3.sval;
                                 }
+                                sym_enter($1.name, &$1);
                                 free(to_str);
                             } 
                             err = false;
@@ -121,8 +114,8 @@ stmnt:
                                         $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                         to_str = type_to_str($1.id_val.val_type);
                                         fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, BIN_MODE));
-                                        $$.val_type = INT_TYPE; 
-                                        $$.ival = $3.ival;
+                                        $1.id_val.ival = $3.ival;
+                                        sym_enter($1.name, &$1);
                                         free(to_str);
                                     }
                                 } 
@@ -141,8 +134,8 @@ stmnt:
                                         $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                         to_str = type_to_str($1.id_val.val_type);
                                         fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, OCT_MODE));
-                                        $$.val_type = INT_TYPE; 
-                                        $$.ival = $3.ival;
+                                        $1.id_val.ival = $3.ival;
+                                        sym_enter($1.name, &$1);
                                         free(to_str);
                                     }
                                 } 
@@ -161,8 +154,8 @@ stmnt:
                                         $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                         to_str = type_to_str($1.id_val.val_type);
                                         fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, HEX_MODE));
-                                        $$.val_type = INT_TYPE; 
-                                        $$.ival = $3.ival;
+                                        $1.id_val.ival = $3.ival;
+                                        sym_enter($1.name, &$1);
                                         free(to_str);
                                     }
                                 } 
@@ -170,6 +163,8 @@ stmnt:
                             }
     |   expr    {
                     if(!err) {
+                        /* printf("Output type: %s\n", type_to_str($1.val_type)); */
+                        /* printf("Output value: %d\n", $1.ival); */
                         if ($$.val_type == INT_TYPE) { 
                             $$.val_type = INT_TYPE; 
                             $$.ival = $1.ival; 
@@ -562,41 +557,51 @@ func_expr:
 ;
 
 term_expr:
-    INT         {
+        INT     {
                     $$.val_type = INT_TYPE; 
                     $$.ival = $1; 
                 }
-  | FLOAT       {
+    | FLOAT     {
                     $$.val_type = FLOAT_TYPE; 
                     $$.fval = $1; 
                 }
-  | BOOL        {
+    | BOOL      {
                     $$.val_type = BOOL_TYPE; 
                     $$.bval = $1; 
                 }      
-  | STRING      {
+    | STRING    {
                     $$.val_type = STRING_TYPE; 
                     $$.sval = $1; 
                 }
-  | PI          {  
+    | PI        {  
                     $$.val_type = FLOAT_TYPE; 
                     $$.fval = PI_CONST; 
                 }
-  | E           {  
+    | E         {  
                     $$.val_type = FLOAT_TYPE; 
                     $$.fval = E_CONST; 
                 }
-  | OP expr CP  { 
-                  $$.val_type = $2.val_type;
-                  if ($2.val_type == INT_TYPE) 
-                    $$.ival = $2.ival;
-                  else if ($2.val_type == FLOAT_TYPE) 
-                    $$.fval = $2.fval;
-                  else if ($2.val_type == BOOL_TYPE) 
-                    $$.bval = $2.bval;
-                  else 
-                    $$.sval = $2.sval;
+    | ID        {
+                    int result = sym_lookup($1.name, &$1);
+                    if(result == 0) {
+                        $$.val_type = $1.id_val.val_type;
+                        if($1.id_val.val_type == INT_TYPE) $$.ival = $1.id_val.ival;
+                        else if($1.id_val.val_type == FLOAT_TYPE) $$.fval = $1.id_val.fval;
+                        else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
+                        else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
+                    }
                 }
+    | OP expr CP    { 
+                        $$.val_type = $2.val_type;
+                        if ($2.val_type == INT_TYPE) 
+                            $$.ival = $2.ival;
+                        else if ($2.val_type == FLOAT_TYPE) 
+                            $$.fval = $2.fval;
+                        else if ($2.val_type == BOOL_TYPE) 
+                            $$.bval = $2.bval;
+                        else 
+                            $$.sval = $2.sval;
+                    }
 ;
 %%
 

@@ -79,7 +79,7 @@ HEX [Bb]16
 
 {ID}        {
                 yylval.id.name = strdup(yytext);
-                yylval.id.lenght = yyleng;
+                yylval.id.length = yyleng;
                 yylval.id.line = yylineno;
                 yylval.id.id_val.val_type = UNKNOWN_TYPE;
                 yylval.id.mode = NO_MODE;
