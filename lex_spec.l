@@ -41,6 +41,10 @@ STRING \"[^\n"]*\"
 BOOL ("true"|"false"|[01])
 COMM (("//"|"#")[^\n]*)|("/*"([^*]|\*+[^*/])**"*/")
 ID [a-zA-Z_][a-zA-Z0-9_]*
+BIN [Bb]2
+OCT [Bb]8
+DEC [Bb]10
+HEX [Bb]16
 /********************** RULES **********************/
 %%
 
@@ -54,10 +58,11 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 "tan"       { return TAN; }
 "LEN"       { return LEN; }
 "SUBSTR"    { return SUBSTR; }
-"OCT"       { return OCT; }
-"BIN"       { return BIN; }
-"HEX"       { return HEX; }
-"DEC"       { return DEC; }
+
+{OCT}       { return OCT; }
+{BIN}       { return BIN; }
+{HEX}       { return HEX; }
+{DEC}       { return DEC; }
 
 
 {INT}       { yylval.ival = atoi(yytext); return INT; }
@@ -71,12 +76,14 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
             }
 {BOOL}      { yylval.ival = (strcmp(yytext, "true") == 0) ? 1 : 0; return BOOL; }
 
+
 {ID}        {
-                yylval.id.lexema = strdup(yytext);
+                yylval.id.name = strdup(yytext);
                 yylval.id.lenght = yyleng;
                 yylval.id.line = yylineno;
                 yylval.id.id_val.val_type = UNKNOWN_TYPE;
-                free(yylval.id.lexema);
+                yylval.id.mode = NO_MODE;
+                free(yylval.id.name);
                 return ID;
             }
 {COMM}      {}

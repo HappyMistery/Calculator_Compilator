@@ -12,6 +12,14 @@ typedef enum {
   STRING_TYPE
 } data_type;
 
+typedef enum {
+  NO_MODE = 1,
+  BIN_MODE,
+  OCT_MODE,
+  DEC_MODE,
+  HEX_MODE
+} mode;
+
 
 typedef struct {
   data_type val_type;
@@ -23,7 +31,6 @@ typedef struct {
 
 
 char *type_to_str(data_type val_type);
-char *value_info_to_str(value_info value);
 
 
 #endif

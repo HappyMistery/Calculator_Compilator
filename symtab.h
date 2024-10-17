@@ -17,6 +17,7 @@ typedef union{
         int lenght;
         int line;
         value_info id_val;
+        mode mode;
     } id;
     int ival;
     float fval;

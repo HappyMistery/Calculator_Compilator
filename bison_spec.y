@@ -21,6 +21,7 @@
   int yylex(void);
   void yyerror(const char *s);
   void cast_vals_to_flt(value_info *op1, value_info *op2);
+  char* switch_modes(value_info *val, mode base);
   void custom_err_mssg(const char *s);
 
   char err_mssg[150];
@@ -37,10 +38,11 @@
 
 %union{
     struct {
-        char *lexema;
+        char *name;
         int lenght;
         int line;
         value_info id_val;
+        mode mode;
     } id;
     int ival;
     float fval;
@@ -72,64 +74,86 @@ calculator:
 ;
 
 stmnt_list:
-   stmnt ENDLINE stmnt_list
-  | ENDLINE stmnt_list
-  | /* empty */               { /* Allow empty input */ }
+        stmnt ENDLINE stmnt_list
+    |   ENDLINE stmnt_list
+    |   /* empty */               { /* Allow empty input */ }
 ;
 
 stmnt:
-    ID ASSIGN expr  {   
-                        if(!err) {
-                            $1.id_val.val_type = $3.val_type;   /* Match the ID type to the asssignation's */
-                            to_str = type_to_str($1.id_val.val_type);
-                            if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
-                                fprintf(yyout, "[%s] %s = %d\n", to_str, $1.lexema, $3.ival);
-                                $$.val_type = INT_TYPE; 
-                                $$.ival = $3.ival; 
+        ID ASSIGN expr  {   
+                            printf("%s\n", $1.name);
+                            if(!err) {
+                                $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                                to_str = type_to_str($1.id_val.val_type);
+                                if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
+                                    fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
+                                    $$.val_type = INT_TYPE; 
+                                    $$.ival = $3.ival; 
+                                }
+                                else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
+                                    fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
+                                    $$.val_type = FLOAT_TYPE; 
+                                    $$.fval = $3.fval;
+                                }
+                                else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
+                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($3.bval == 1) ? "true" : "false");
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $3.bval;
+                                }
+                                else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
+                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $3.sval);
+                                    $$.val_type = STRING_TYPE; 
+                                    $$.sval = $3.sval;
+                                }
+                                free(to_str);
                             }
-                            else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
-                                fprintf(yyout, "[%s] %s = %g\n", to_str, $1.lexema, $3.fval);
-                                $$.val_type = FLOAT_TYPE; 
-                                $$.fval = $3.fval;
-                            }
-                            else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
-                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.lexema, ($3.bval == 1) ? "true" : "false");
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $3.bval;
-                            }
-                            else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
-                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.lexema, $3.sval);
-                                $$.val_type = STRING_TYPE; 
-                                $$.sval = $3.sval;
-                            }
-                            free(to_str);
+                        }
+    |   expr    {
+                    if(!err) {
+                        if ($$.val_type == INT_TYPE) { 
+                            $$.val_type = INT_TYPE; 
+                            $$.ival = $1.ival; 
+                            fprintf(yyout, "[Integer] %d\n", $1.ival); 
+                        }
+                        else if ($$.val_type == FLOAT_TYPE) { 
+                            $$.val_type = FLOAT_TYPE; 
+                            $$.ival = $1.fval; 
+                            fprintf(yyout, "[Float] %g\n", $1.fval); 
+                        }
+                        else if ($$.val_type == BOOL_TYPE) { 
+                            $$.val_type = BOOL_TYPE; 
+                            $$.bval = $1.bval; 
+                            fprintf(yyout, "[Boolean] %s\n", ($1.bval == 1) ? "true" : "false"); 
+                        }
+                        else if ($$.val_type == STRING_TYPE) { 
+                            $$.val_type = STRING_TYPE; 
+                            $$.sval = $1.sval; 
+                            fprintf(yyout, "[String] %s\n", $1.sval); 
                         }
                     }
-  | expr  {
-            if(!err) {
-                if 
-                ($$.val_type == INT_TYPE) { 
-                    $$.val_type = INT_TYPE; 
-                    $$.ival = $1.ival; 
-                    fprintf(yyout, "[Integer] %d\n", $1.ival); 
                 }
-                else if ($$.val_type == FLOAT_TYPE) { 
-                    $$.val_type = FLOAT_TYPE; 
-                    $$.ival = $1.fval; 
-                    fprintf(yyout, "[Float] %g\n", $1.fval); 
-                }
-                else if ($$.val_type == BOOL_TYPE) { 
-                    $$.val_type = BOOL_TYPE; 
-                    $$.bval = $1.bval; 
-                    fprintf(yyout, "[Boolean] %s\n", ($1.bval == 1) ? "true" : "false"); 
-                }
-                else if ($$.val_type == STRING_TYPE) { 
-                    $$.val_type = STRING_TYPE; 
-                    $$.sval = $1.sval; 
-                    fprintf(yyout, "[String] %s\n", $1.sval); 
-                }
-            }
-        }
+    |   ID ASSIGN expr BIN  {   
+                                if(!err) {
+                                    $1.mode = BIN_MODE;
+                                    $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                                    to_str = type_to_str($1.id_val.val_type);
+                                    if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
+                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, BIN_MODE));
+                                        $$.val_type = INT_TYPE; 
+                                        $$.ival = $3.ival; 
+                                    }
+                                    free(to_str);
+                                }
+                            }
+    |   expr BIN    {
+                        if(!err) {
+                            if ($$.val_type == INT_TYPE) {
+                                fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, BIN_MODE));
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $1.ival;  
+                            }
+                        }
+                    }
 ;
 
 expr:
@@ -501,6 +525,80 @@ void cast_vals_to_flt(value_info *op1, value_info *op2) {
             op2->fval = (float)op2->ival;
     }
 }
+
+char* decToBin(int n) {
+    char* binaryStr = (char*)malloc(33 * sizeof(char));
+    if (!binaryStr) {
+        printf("Memory allocation failed!\n");
+        exit(1);
+    }
+    int i = 0;
+    if (n == 0) {
+        strcpy(binaryStr, "0");
+        return binaryStr;
+    }
+    /* Temporary array to store the binary digits in reverse */
+    char temp[32];
+    while (n > 0) {
+        /* Store remainder when n is divided by 2 */
+        temp[i] = (n % 2) + '0'; /* Convert int (0 or 1) to char */
+        n = n / 2;
+        i++;
+    }
+    int j;
+    /* Reverse the temp array to get the correct binary string */
+    for (j = 0; j < i; j++) {
+        binaryStr[j] = temp[i - j - 1];
+    }
+    binaryStr[i] = '\0';
+    return binaryStr;
+}
+
+char* decToOct(int n) {
+    char* octalStr = (char*)malloc(12 * sizeof(char));
+    if (!octalStr) {
+        printf("Memory allocation failed!\n");
+        exit(1);
+    }
+
+    sprintf(octalStr, "%o", n);
+    return octalStr;
+}
+
+char* decToHex(int n) {
+    char* hexStr = (char*)malloc(9 * sizeof(char));
+    if (!hexStr) {
+        printf("Memory allocation failed!\n");
+        exit(1);
+    }
+
+    sprintf(hexStr, "%X", n);
+    return hexStr;
+}
+
+char* switch_modes(value_info *val, mode base) {
+    if(val->val_type == INT_TYPE) {
+        char* result;
+        switch (base) {
+            case BIN_MODE:
+                result = decToBin(val->ival);
+                break;
+            case OCT_MODE:
+                result = decToOct(val->ival);
+                break;
+            case HEX_MODE:
+                result = decToHex(val->ival);
+                break;
+            default:
+                result = (char*)malloc(1 * sizeof(char));
+                strcpy(result, "");
+                printf("Invalid base!\n");
+        }
+        return result;
+    }
+    return "";
+}
+
 
 void custom_err_mssg(const char *s) {
     err = true;
