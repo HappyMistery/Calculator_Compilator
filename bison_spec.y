@@ -22,7 +22,7 @@
   int yylex(void);
   void yyerror(const char *s);
   void cast_vals_to_flt(value_info *op1, value_info *op2);
-  char* switch_modes(value_info *val, mode base);
+  char* switch_bases(value_info *val, base base);
   void custom_err_mssg(const char *s);
 
   char err_mssg[150];
@@ -56,7 +56,6 @@
                       HIG HEQ LOW LEQ EQU NEQ 
                       NOT AND ORR
                       LEN SUBSTR
-                      BIN OCT HEX DEC
                       OP CP
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
@@ -112,22 +111,11 @@ stmnt:
                                     else {
                                         $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                         to_str = type_to_str($1.id_val.val_type);
-                                        if (strcmp($4, "b2") == 0) {
-                                            $1.mode = BIN_MODE;
-                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
-                                        }
-                                        else if (strcmp($4, "b8") == 0) {
-                                            $1.mode = OCT_MODE;
-                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
-                                        }
-                                        else if (strcmp($4, "b10") == 0) {
-                                            $1.mode = DEC_MODE;
-                                            fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
-                                        }
-                                        else if (strcmp($4, "b16") == 0) {
-                                            $1.mode = HEX_MODE;
-                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
-                                        }
+                                        if (strcmp($4, "b2") == 0) $1.base = BIN_BASE;
+                                        else if (strcmp($4, "b8") == 0) $1.base = OCT_BASE;
+                                        else if (strcmp($4, "b10") == 0) $1.base = DEC_BASE;
+                                        else if (strcmp($4, "b16") == 0) $1.base = HEX_BASE;
+                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_bases(&$3, $1.base));
                                         $1.id_val.ival = $3.ival;
                                         sym_enter($1.name, &$1);
                                         free(to_str);
@@ -163,40 +151,27 @@ stmnt:
     |   expr BASE   {
                         if(!err) {
                             if ($$.val_type != INT_TYPE) {
-                                to_str = type_to_str($1.val_type);
-                                sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $4, to_str);
+                                sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $2, to_str);
                                 free(to_str);
                                 custom_err_mssg(err_mssg);
                             }
                             else {
-                                $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
-                                to_str = type_to_str($1.id_val.val_type);
-                                if (strcmp($4, "b2") == 0) {
-                                    $1.mode = BIN_MODE;
-                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                base base;
+                                if (strcmp($2, "b2") == 0) {
+                                    base = BIN_BASE;
                                 }
-                                else if (strcmp($4, "b8") == 0) {
-                                    $1.mode = OCT_MODE;
-                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                else if (strcmp($2, "b8") == 0) {
+                                    base = OCT_BASE;
                                 }
-                                else if (strcmp($4, "b10") == 0) {
-                                    $1.mode = DEC_MODE;
-                                    fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
+                                else if (strcmp($2, "b10") == 0) {
+                                    base = DEC_BASE;
                                 }
-                                else if (strcmp($4, "b16") == 0) {
-                                    $1.mode = HEX_MODE;
-                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                else if (strcmp($2, "b16") == 0) {
+                                    base = HEX_BASE;
                                 }
-                                $1.id_val.ival = $3.ival;
-                                sym_enter($1.name, &$1);
-                                free(to_str);
-                            }
-                        } 
-                        err = false;
-                            else {
-                                fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, BIN_MODE));
                                 $$.val_type = INT_TYPE; 
-                                $$.ival = $1.ival;  
+                                $$.ival = $1.ival;
+                                fprintf(yyout, "[Integer] %s\n", switch_bases(&$1, base));
                             }
                         } 
                         err = false;
@@ -286,60 +261,6 @@ expr:
                                 $$.val_type = INT_TYPE; 
                                 $$.ival = $1.ival - $3.ival; 
                             }
-                        }
-  | expr HIG expr1  { /* Booleans and Strings cannot use the higher operator */
-                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
-                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                custom_err_mssg("Higher (>) operator cannot be applied to type 'String'");
-                            cast_vals_to_flt(&$1, &$3); 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.fval > $3.fval;
-                        }
-  | expr HEQ expr1  { /* Booleans and Strings cannot use the higher or equal operator */
-                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
-                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'String'");
-                            cast_vals_to_flt(&$1, &$3); 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.fval >= $3.fval;
-                        }
-  | expr LOW expr1  { /* Booleans and Strings cannot use the lower operator */
-                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
-                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                custom_err_mssg("Lower (<) operator cannot be applied to type 'String'");
-                            cast_vals_to_flt(&$1, &$3); 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.fval < $3.fval;
-                        }
-  | expr LEQ expr1  { /* Booleans and Strings cannot use the lower or equal operator */
-                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
-                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'String'");
-                            cast_vals_to_flt(&$1, &$3); 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.fval <= $3.fval;
-                        }
-  | expr EQU expr1  { /* Booleans and Strings cannot use the equal operator */
-                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
-                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                custom_err_mssg("Equal (==) operator cannot be applied to type 'String'");
-                            cast_vals_to_flt(&$1, &$3); 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.fval == $3.fval;
-                        }
-  | expr NEQ expr1  { /* Booleans and Strings cannot use the not equal operator */
-                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
-                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
-                            cast_vals_to_flt(&$1, &$3); 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.fval != $3.fval;
                         }
   | expr1
 ;
@@ -493,7 +414,7 @@ expr4:
                                 custom_err_mssg(err_mssg); 
                             }
                         }
-  | SUBSTR OP expr4 expr4 expr4 CP  { /* Can only use SUBSTR() with a string */
+    | SUBSTR OP expr4 expr4 expr4 CP    { /* Can only use SUBSTR() with a string */
                                                     if ($3.val_type != STRING_TYPE) { 
                                                         to_str = type_to_str($3.val_type);
                                                         sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", to_str); 
@@ -517,7 +438,61 @@ expr4:
                                                         $$.sval = str;
                                                     }
                                                     free(to_str);
-                                                }
+                                        }
+    | expr4 HIG expr_term  { /* Booleans and Strings cannot use the higher operator */
+                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
+                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                custom_err_mssg("Higher (>) operator cannot be applied to type 'String'");
+                            cast_vals_to_flt(&$1, &$3); 
+                            $$.val_type = BOOL_TYPE; 
+                            $$.bval = $1.fval > $3.fval;
+                        }
+    | expr4 HEQ expr_term  { /* Booleans and Strings cannot use the higher or equal operator */
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                    custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                    custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'String'");
+                                cast_vals_to_flt(&$1, &$3); 
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.fval >= $3.fval;
+                            }
+    | expr4 LOW expr_term  { /* Booleans and Strings cannot use the lower operator */
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                    custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                    custom_err_mssg("Lower (<) operator cannot be applied to type 'String'");
+                                cast_vals_to_flt(&$1, &$3); 
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.fval < $3.fval;
+                            }
+    | expr4 LEQ expr_term  { /* Booleans and Strings cannot use the lower or equal operator */
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                    custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                    custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'String'");
+                                cast_vals_to_flt(&$1, &$3); 
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.fval <= $3.fval;
+                            }
+    | expr4 EQU expr_term  { /* Booleans and Strings cannot use the equal operator */
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                    custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                    custom_err_mssg("Equal (==) operator cannot be applied to type 'String'");
+                                cast_vals_to_flt(&$1, &$3); 
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.fval == $3.fval;
+                            }
+    | expr4 NEQ expr_term  { /* Booleans and Strings cannot use the not equal operator */
+                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                    custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
+                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                    custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
+                                cast_vals_to_flt(&$1, &$3); 
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.fval != $3.fval;
+                            }
   | expr_term
 ;
 
@@ -536,7 +511,7 @@ expr_term:
                 }      
     | STRING    {
                     $$.val_type = STRING_TYPE; 
-                    $$.sval = $1; 
+                    $$.sval = $1;
                 }
     | PI        {  
                     $$.val_type = FLOAT_TYPE; 
@@ -569,93 +544,6 @@ expr_term:
                     }
 ;
 %%
-
-void cast_vals_to_flt(value_info *op1, value_info *op2) {
-    if(op2 == NULL) {
-        if (op1->val_type == INT_TYPE) 
-            op1->fval = (float)op1->ival;
-    }
-    else {
-        if (op1->val_type == INT_TYPE) 
-            op1->fval = (float)op1->ival;
-        if (op2->val_type == INT_TYPE) 
-            op2->fval = (float)op2->ival;
-    }
-}
-
-char* decToBin(int n) {
-    char* binaryStr = (char*)malloc(33 * sizeof(char));
-    if (!binaryStr) {
-        printf("Memory allocation failed!\n");
-        exit(1);
-    }
-    int i = 0;
-    if (n == 0) {
-        strcpy(binaryStr, "0");
-        return binaryStr;
-    }
-    /* Temporary array to store the binary digits in reverse */
-    char temp[32];
-    while (n > 0) {
-        /* Store remainder when n is divided by 2 */
-        temp[i] = (n % 2) + '0'; /* Convert int (0 or 1) to char */
-        n = n / 2;
-        i++;
-    }
-    int j;
-    /* Reverse the temp array to get the correct binary string */
-    for (j = 0; j < i; j++) {
-        binaryStr[j] = temp[i - j - 1];
-    }
-    binaryStr[i] = '\0';
-    return binaryStr;
-}
-
-char* decToOct(int n) {
-    char* octalStr = (char*)malloc(12 * sizeof(char));
-    if (!octalStr) {
-        printf("Memory allocation failed!\n");
-        exit(1);
-    }
-
-    sprintf(octalStr, "%o", n);
-    return octalStr;
-}
-
-char* decToHex(int n) {
-    char* hexStr = (char*)malloc(9 * sizeof(char));
-    if (!hexStr) {
-        printf("Memory allocation failed!\n");
-        exit(1);
-    }
-
-    sprintf(hexStr, "%X", n);
-    return hexStr;
-}
-
-char* switch_modes(value_info *val, mode base) {
-    if(val->val_type == INT_TYPE) {
-        char* result;
-        switch (base) {
-            case BIN_MODE:
-                result = decToBin(val->ival);
-                break;
-            case OCT_MODE:
-                result = decToOct(val->ival);
-                break;
-            case HEX_MODE:
-                result = decToHex(val->ival);
-                break;
-            default:
-                result = (char*)malloc(1 * sizeof(char));
-                strcpy(result, "");
-                printf("Invalid base!\n");
-        }
-        return result;
-    }
-    return "";
-}
-
 
 void custom_err_mssg(const char *s) {
     err = true;

@@ -76,7 +76,7 @@ BASE b2|b8|b10|b16
                 yylval.id.length = yyleng;
                 yylval.id.line = yylineno;
                 yylval.id.id_val.val_type = UNKNOWN_TYPE;
-                yylval.id.mode = NO_MODE;
+                yylval.id.base = NO_BASE;
                 return ID;
             }
 {COMM}      {}

@@ -13,12 +13,12 @@ typedef enum {
 } data_type;
 
 typedef enum {
-  NO_MODE = 1,
-  BIN_MODE,
-  OCT_MODE,
-  DEC_MODE,
-  HEX_MODE
-} mode;
+  NO_BASE = 1,
+  BIN_BASE,
+  OCT_BASE,
+  DEC_BASE,
+  HEX_BASE
+} base;
 
 
 typedef struct {
@@ -34,7 +34,7 @@ typedef struct {
     int length;
     int line;
     value_info id_val;
-    mode mode;
+    base base;
 } id;
 
 

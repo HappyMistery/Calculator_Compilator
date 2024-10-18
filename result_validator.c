@@ -134,12 +134,12 @@ int validate_results(const char *input_file, const char *output_file) {
         {"false or false", "[Boolean] false"},
         {"not false", "[Boolean] true"},
         {"PI > 4", "[Boolean] false"},
-        {"1*0 == 0", "[Boolean] true"},
-        {"5 % 2 + 3 * 2 - 4 / 2 >= 5", "[Boolean] true"},
-        {"sin(PI / 2) + 1 < 2", "[Boolean] false"},
+        {"(1*0) == 0", "[Boolean] true"},
+        {"(5 % 2 + 3 * 2 - 4 / 2) >= 5", "[Boolean] true"},
+        {"(sin(PI / 2) + 1) < 2", "[Boolean] false"},
         {"1.5 <= 1.5002", "[Boolean] true"},
         {"true and not true or not true", "[Boolean] false"},
-        {"cos(0) <> 1", "[Boolean] false"},
+        {"(cos(0)) <> 1", "[Boolean] false"},
         {"(3 > 1.75) and true or false", "[Boolean] true"},
         {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
     };
@@ -159,8 +159,8 @@ int validate_results(const char *input_file, const char *output_file) {
         {"5 and \"hello\"", " And (and) operator can only be applied to type 'Boolean'"},
         {"sin(true)", " sin() cannot take a type 'Boolean' as a parameter"},
         {"tan(PI/2)", " Indefinition error"},
-        {"false b8", " Conversion to octal (b8) cannot be applied to type 'Boolean'. Only type 'Integer'"},
-        {"\"testing\" b16", " Conversion to hexadecimal (b16) cannot be applied to type 'String'. Only type 'Integer'"}
+        {"false b8", " Base conversion (b10 to b8) cannot be applied to type 'b8'. Only type 'Integer'"},
+        {"\"testing\" b16", " Base conversion (b10 to b16) cannot be applied to type 'b16'. Only type 'Integer'"}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {
