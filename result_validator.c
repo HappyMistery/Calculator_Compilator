@@ -121,7 +121,8 @@ int validate_results(const char *input_file, const char *output_file) {
         {"\"The quick \" + \"brown \" + \"fox \" + \"jumps\"", "[String] The quick brown fox jumps"},
         {"\"Concatenating \" + \"strings \" + \"in C\"", "[String] Concatenating strings in C"},
         {"\"hola\" + SUBSTR(\"hola pepe\" 5 4)", "[String] holapepe"},
-        {"LEN(\"NO COnfLIcts\") + \" finally\"", "[String] 12 finally"}
+        {"LEN(\"NO COnfLIcts\") + \" finally\"", "[String] 12 finally"},
+        {"SUBSTR(\"hola pepe\" LEN(\"hola \") LEN(\"pepe\"))", "[String] pepe"}
     };
 
     const struct {

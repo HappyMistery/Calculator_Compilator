@@ -20,3 +20,4 @@ SUBSTR(("xd" + 123) 2 3)                    // Substring of a concatenation
 "Concatenating " + "strings " + "in C"       // Concatenating in C
 "hola" + SUBSTR("hola pepe" 5 4)            // Concatenating string with substring
 LEN("NO COnfLIcts") + " finally"            // Concatenating result of LEN() with string
+SUBSTR("hola pepe" LEN("hola ") LEN("pepe"))    //Nested functions

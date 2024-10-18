@@ -41,10 +41,7 @@ STRING \"[^\n"]*\"
 BOOL ("true"|"false"|[01])
 COMM (("//"|"#")[^\n]*)|("/*"([^*]|\*+[^*/])**"*/")
 ID [a-zA-Z_][a-zA-Z0-9_]*
-BIN [Bb]2
-OCT [Bb]8
-DEC [Bb]10
-HEX [Bb]16
+BASE b2|b8|b10|b16
 /********************** RULES **********************/
 %%
 
@@ -59,10 +56,7 @@ HEX [Bb]16
 "LEN"       { return LEN; }
 "SUBSTR"    { return SUBSTR; }
 
-{OCT}       { return OCT; }
-{BIN}       { return BIN; }
-{HEX}       { return HEX; }
-{DEC}       {}
+{BASE}      { yylval.sval = strdup(yytext); return BASE; }
 
 
 {INT}       { yylval.ival = atoi(yytext); return INT; }

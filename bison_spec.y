@@ -50,7 +50,7 @@
 %token <id> ID
 %token <ival> INT BOOL
 %token <fval> FLOAT PI E SIN COS TAN
-%token <sval> STRING
+%token <sval> STRING BASE
 %token <sense_valor> COMM ASSIGN ENDLINE
                       ADD SUB MUL DIV MOD POW 
                       HIG HEQ LOW LEQ EQU NEQ 
@@ -59,7 +59,7 @@
                       BIN OCT HEX DEC
                       OP CP
 
-%type <expr_val> stmnt expr mult_expr exp_expr trig_expr func_expr term_expr
+%type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
 %start calculator
 
@@ -101,59 +101,33 @@ stmnt:
                             } 
                             err = false;
                         }
-    |   ID ASSIGN expr BIN  {   
+    |   ID ASSIGN expr BASE  {   
                                 if(!err) {
                                     if ($3.val_type != INT_TYPE) {
                                         to_str = type_to_str($3.val_type);
-                                        sprintf(err_mssg, "Conversion to binary (b2) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                        sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $4, to_str);
                                         free(to_str);
                                         custom_err_mssg(err_mssg);
                                     }
                                     else {
-                                        $1.mode = BIN_MODE;
                                         $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                         to_str = type_to_str($1.id_val.val_type);
-                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, BIN_MODE));
-                                        $1.id_val.ival = $3.ival;
-                                        sym_enter($1.name, &$1);
-                                        free(to_str);
-                                    }
-                                } 
-                                err = false;
-                            }
-    |   ID ASSIGN expr OCT  {   
-                                if(!err) {
-                                    if ($3.val_type != INT_TYPE) {
-                                        to_str = type_to_str($3.val_type);
-                                        sprintf(err_mssg, "Conversion to octal (b8) cannot be applied to type '%s'. Only type 'Integer'", to_str);
-                                        free(to_str);
-                                        custom_err_mssg(err_mssg);
-                                    }
-                                    else {
-                                        $1.mode = OCT_MODE;
-                                        $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
-                                        to_str = type_to_str($1.id_val.val_type);
-                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, OCT_MODE));
-                                        $1.id_val.ival = $3.ival;
-                                        sym_enter($1.name, &$1);
-                                        free(to_str);
-                                    }
-                                } 
-                                err = false;
-                            }
-    |   ID ASSIGN expr HEX  {   
-                                if(!err) {
-                                    if ($3.val_type != INT_TYPE) {
-                                        to_str = type_to_str($3.val_type);
-                                        sprintf(err_mssg, "Conversion to hexadecimal (b16) cannot be applied to type '%s'. Only type 'Integer'", to_str);
-                                        free(to_str);
-                                        custom_err_mssg(err_mssg);
-                                    }
-                                    else {
-                                        $1.mode = HEX_MODE;
-                                        $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
-                                        to_str = type_to_str($1.id_val.val_type);
-                                        fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, HEX_MODE));
+                                        if (strcmp($4, "b2") == 0) {
+                                            $1.mode = BIN_MODE;
+                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                        }
+                                        else if (strcmp($4, "b8") == 0) {
+                                            $1.mode = OCT_MODE;
+                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                        }
+                                        else if (strcmp($4, "b10") == 0) {
+                                            $1.mode = DEC_MODE;
+                                            fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
+                                        }
+                                        else if (strcmp($4, "b16") == 0) {
+                                            $1.mode = HEX_MODE;
+                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                        }
                                         $1.id_val.ival = $3.ival;
                                         sym_enter($1.name, &$1);
                                         free(to_str);
@@ -163,8 +137,6 @@ stmnt:
                             }
     |   expr    {
                     if(!err) {
-                        /* printf("Output type: %s\n", type_to_str($1.val_type)); */
-                        /* printf("Output value: %d\n", $1.ival); */
                         if ($$.val_type == INT_TYPE) { 
                             $$.val_type = INT_TYPE; 
                             $$.ival = $1.ival; 
@@ -188,48 +160,41 @@ stmnt:
                     } 
                     err = false;
                 }
-    |   expr BIN    {
+    |   expr BASE   {
                         if(!err) {
                             if ($$.val_type != INT_TYPE) {
                                 to_str = type_to_str($1.val_type);
-                                sprintf(err_mssg, "Conversion to binary (b2) cannot be applied to type '%s'. Only type 'Integer'", to_str);
+                                sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $4, to_str);
                                 free(to_str);
                                 custom_err_mssg(err_mssg);
-                            }   
+                            }
+                            else {
+                                $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                                to_str = type_to_str($1.id_val.val_type);
+                                if (strcmp($4, "b2") == 0) {
+                                    $1.mode = BIN_MODE;
+                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                }
+                                else if (strcmp($4, "b8") == 0) {
+                                    $1.mode = OCT_MODE;
+                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                }
+                                else if (strcmp($4, "b10") == 0) {
+                                    $1.mode = DEC_MODE;
+                                    fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
+                                }
+                                else if (strcmp($4, "b16") == 0) {
+                                    $1.mode = HEX_MODE;
+                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_modes(&$3, $1.mode));
+                                }
+                                $1.id_val.ival = $3.ival;
+                                sym_enter($1.name, &$1);
+                                free(to_str);
+                            }
+                        } 
+                        err = false;
                             else {
                                 fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, BIN_MODE));
-                                $$.val_type = INT_TYPE; 
-                                $$.ival = $1.ival;  
-                            }
-                        } 
-                        err = false;
-                    }
-    |   expr OCT    {
-                        if(!err) {
-                            if ($$.val_type != INT_TYPE) {
-                                to_str = type_to_str($1.val_type);
-                                sprintf(err_mssg, "Conversion to octal (b8) cannot be applied to type '%s'. Only type 'Integer'", to_str);
-                                free(to_str);
-                                custom_err_mssg(err_mssg);
-                            }   
-                            else {
-                                fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, OCT_MODE));
-                                $$.val_type = INT_TYPE; 
-                                $$.ival = $1.ival;  
-                            }
-                        } 
-                        err = false;
-                    }
-    |   expr HEX    {
-                        if(!err) {
-                            if ($$.val_type != INT_TYPE) {
-                                to_str = type_to_str($1.val_type);
-                                sprintf(err_mssg, "Conversion to hexadecimal (b16) cannot be applied to type '%s'. Only type 'Integer'", to_str);
-                                free(to_str);
-                                custom_err_mssg(err_mssg);
-                            }   
-                            else {
-                                fprintf(yyout, "[Integer] %s\n", switch_modes(&$1, HEX_MODE));
                                 $$.val_type = INT_TYPE; 
                                 $$.ival = $1.ival;  
                             }
@@ -239,7 +204,7 @@ stmnt:
 ;
 
 expr:
-    SUB mult_expr   { /* Can only use Unary Minus Operator (-) with a number */
+    SUB expr1   { /* Can only use Unary Minus Operator (-) with a number */
                         if ($2.val_type == INT_TYPE) {
                             $$.val_type = INT_TYPE; 
                             $$.ival = -$2.ival; 
@@ -255,7 +220,7 @@ expr:
                             custom_err_mssg(err_mssg); 
                         }
                     }
-  | ADD mult_expr   { /* Can only use Unary Plus Operator (+) with a number */
+  | ADD expr1   { /* Can only use Unary Plus Operator (+) with a number */
                         if ($2.val_type == INT_TYPE) { 
                             $$.val_type = INT_TYPE; 
                             $$.ival = +$2.ival; 
@@ -271,7 +236,7 @@ expr:
                             custom_err_mssg(err_mssg); 
                         }
                     }
-  | expr ADD mult_expr  { /* If any one of the operands is a string, concatenate */
+  | expr ADD expr1  { /* If any one of the operands is a string, concatenate */
                             if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
                                 char str[255];
                                 cast_vals_to_flt(&$1, &$3);
@@ -308,7 +273,7 @@ expr:
                                 $$.ival = $1.ival + $3.ival; 
                             }
                         }
-  | expr SUB mult_expr  { /* Booleans and Strings cannot use the subtraction operator */
+  | expr SUB expr1  { /* Booleans and Strings cannot use the subtraction operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Subtraction (-) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -322,7 +287,7 @@ expr:
                                 $$.ival = $1.ival - $3.ival; 
                             }
                         }
-  | expr HIG mult_expr  { /* Booleans and Strings cannot use the higher operator */
+  | expr HIG expr1  { /* Booleans and Strings cannot use the higher operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -331,7 +296,7 @@ expr:
                             $$.val_type = BOOL_TYPE; 
                             $$.bval = $1.fval > $3.fval;
                         }
-  | expr HEQ mult_expr  { /* Booleans and Strings cannot use the higher or equal operator */
+  | expr HEQ expr1  { /* Booleans and Strings cannot use the higher or equal operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -340,7 +305,7 @@ expr:
                             $$.val_type = BOOL_TYPE; 
                             $$.bval = $1.fval >= $3.fval;
                         }
-  | expr LOW mult_expr  { /* Booleans and Strings cannot use the lower operator */
+  | expr LOW expr1  { /* Booleans and Strings cannot use the lower operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -349,7 +314,7 @@ expr:
                             $$.val_type = BOOL_TYPE; 
                             $$.bval = $1.fval < $3.fval;
                         }
-  | expr LEQ mult_expr  { /* Booleans and Strings cannot use the lower or equal operator */
+  | expr LEQ expr1  { /* Booleans and Strings cannot use the lower or equal operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -358,7 +323,7 @@ expr:
                             $$.val_type = BOOL_TYPE; 
                             $$.bval = $1.fval <= $3.fval;
                         }
-  | expr EQU mult_expr  { /* Booleans and Strings cannot use the equal operator */
+  | expr EQU expr1  { /* Booleans and Strings cannot use the equal operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -367,7 +332,7 @@ expr:
                             $$.val_type = BOOL_TYPE; 
                             $$.bval = $1.fval == $3.fval;
                         }
-  | expr NEQ mult_expr  { /* Booleans and Strings cannot use the not equal operator */
+  | expr NEQ expr1  { /* Booleans and Strings cannot use the not equal operator */
                             if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
                             else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -376,12 +341,12 @@ expr:
                             $$.val_type = BOOL_TYPE; 
                             $$.bval = $1.fval != $3.fval;
                         }
-  | mult_expr
+  | expr1
 ;
 
 
-mult_expr: 
-    mult_expr MUL exp_expr  { /* Booleans and Strings cannot use the multiplication operator */
+expr1: 
+    expr1 MUL expr2  { /* Booleans and Strings cannot use the multiplication operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                     custom_err_mssg("Multiplication (*) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -395,7 +360,7 @@ mult_expr:
                                   $$.ival = $1.ival * $3.ival; 
                                 }
                             }
-  | mult_expr DIV exp_expr  { 
+  | expr1 DIV expr2  { 
                                 cast_vals_to_flt(&$1, &$3); /* floats are used for the operation in order to get a float result */
                                 /* Booleans and Strings cannot use the division operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
@@ -409,7 +374,7 @@ mult_expr:
                                     $$.fval = $1.fval / $3.fval;
                                 }
                             }
-  | mult_expr MOD exp_expr  { 
+  | expr1 MOD expr2  { 
                                 cast_vals_to_flt(&$1, &$3); /* floats are used to look for a divider == 0 */
                                 /* Booleans and Strings cannot use the modulo operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
@@ -426,7 +391,7 @@ mult_expr:
                                   $$.ival = $1.ival % $3.ival; 
                                 }
                             }
-  | mult_expr ORR exp_expr  { /* Only booleans can use the or operator */
+  | expr1 ORR expr2  { /* Only booleans can use the or operator */
                                 if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
                                     custom_err_mssg("Or (or) operator can only be applied to type 'Boolean'");
                                 else {
@@ -434,11 +399,11 @@ mult_expr:
                                   $$.bval = $1.bval || $3.bval;
                                 }
                             }
-  | exp_expr
+  | expr2
 ;
 
-exp_expr:
-    trig_expr POW exp_expr  { /* Booleans and Strings cannot use the power operator */
+expr2:
+    expr3 POW expr2  { /* Booleans and Strings cannot use the power operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                     custom_err_mssg("Power (**) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
@@ -451,7 +416,7 @@ exp_expr:
                                     $$.val_type = INT_TYPE; 
                                     $$.ival = pow($1.ival,$3.ival); }
                             }
-  | exp_expr AND trig_expr  { /* Only booleans can use the or operator */
+  | expr2 AND expr3  { /* Only booleans can use the or operator */
                                 if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
                                     custom_err_mssg("And (and) operator can only be applied to type 'Boolean'");
                                 else { 
@@ -459,11 +424,11 @@ exp_expr:
                                     $$.bval = $1.bval && $3.bval; 
                                 }
                             }
-  | trig_expr
+  | expr3
 ;
 
-trig_expr:
-    SIN term_expr   { /* Booleans and Strings cannot be used in trigonometric expressions */
+expr3:
+    SIN expr4   { /* Booleans and Strings cannot be used in trigonometric expressions */
                         if ($2.val_type == BOOL_TYPE) 
                             custom_err_mssg("sin() cannot take a type 'Boolean' as a parameter");
                         else if ($2.val_type == STRING_TYPE) 
@@ -475,7 +440,7 @@ trig_expr:
                             else $$.fval = sin($2.fval);  /* calculate sin(x) */
                         }
                     }
-  | COS term_expr   { 
+  | COS expr4   { 
                         /* Booleans and Strings cannot be used in trigonometric expressions */
                         if ($2.val_type == BOOL_TYPE) 
                             custom_err_mssg("cos() cannot take a type 'Boolean' as a parameter");
@@ -488,7 +453,7 @@ trig_expr:
                             else $$.fval = cos($2.fval);  /* calculate cos(x) */
                         }
                     }
-  | TAN term_expr   { 
+  | TAN expr4   { 
                         /* Booleans and Strings cannot be used in trigonometric expressions */
                         if ($2.val_type == BOOL_TYPE) 
                             custom_err_mssg("tan() cannot take a type 'Boolean' as a parameter");
@@ -504,7 +469,7 @@ trig_expr:
                             }
                         }
                     }
-  | NOT term_expr   { /* Only booleans can use the or operator */
+  | NOT expr4   { /* Only booleans can use the or operator */
                         if ($2.val_type != BOOL_TYPE) 
                             custom_err_mssg("Not (not) operator can only be applied to type 'Boolean'");
                         else { 
@@ -512,11 +477,11 @@ trig_expr:
                             $$.bval = !$2.bval; 
                         }
                       }
-  | func_expr
+  | expr4
 ;
 
-func_expr:
-    LEN OP func_expr CP { /* Can only use LEN() with a string */
+expr4:
+    LEN OP expr4 CP { /* Can only use LEN() with a string */
                             if ($3.val_type == STRING_TYPE) {  
                                 $$.val_type = INT_TYPE; 
                                 $$.ival = strlen($3.sval); 
@@ -528,7 +493,7 @@ func_expr:
                                 custom_err_mssg(err_mssg); 
                             }
                         }
-  | SUBSTR OP func_expr func_expr func_expr CP  { /* Can only use SUBSTR() with a string */
+  | SUBSTR OP expr4 expr4 expr4 CP  { /* Can only use SUBSTR() with a string */
                                                     if ($3.val_type != STRING_TYPE) { 
                                                         to_str = type_to_str($3.val_type);
                                                         sprintf(err_mssg, "SUBSTR(String str, Int start, Int length) 1st parameter expects type 'String' but it got type '%s'", to_str); 
@@ -553,10 +518,10 @@ func_expr:
                                                     }
                                                     free(to_str);
                                                 }
-  | term_expr
+  | expr_term
 ;
 
-term_expr:
+expr_term:
         INT     {
                     $$.val_type = INT_TYPE; 
                     $$.ival = $1; 
