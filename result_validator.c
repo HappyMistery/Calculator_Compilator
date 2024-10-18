@@ -101,6 +101,24 @@ int validate_results(const char *input_file, const char *output_file) {
         {"10 - (3.5 * PI) + E**2 - LEN(\"Piernas al fallo\") / 3.0", result_to_string("float", 10 - (3.5 * M_PI) + pow(M_E, 2) - strlen("Piernas al fallo") / 3.0)}
     };
 
+    const struct {
+        const char* input;
+        const char* output;
+    } boolean_test[] = {
+        {"true", "[Boolean] true"},
+        {"true and true", "[Boolean] true"},
+        {"false or false", "[Boolean] false"},
+        {"not false", "[Boolean] true"},
+        {"PI > 4", "[Boolean] false"},
+        {"(1*0) == 0", "[Boolean] true"},
+        {"(5 % 2 + 3 * 2 - 4 / 2) >= 5", "[Boolean] true"},
+        {"(sin(PI / 2) + 1) < 2", "[Boolean] false"},
+        {"1.5 <= 1.5002", "[Boolean] true"},
+        {"true and not true or not true", "[Boolean] false"},
+        {"(cos(0)) <> 1", "[Boolean] false"},
+        {"(3 > 1.75) and true or false", "[Boolean] true"},
+        {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
+    };
 
     const struct {
         const char* input;
@@ -126,27 +144,33 @@ int validate_results(const char *input_file, const char *output_file) {
     };
 
     const struct {
-    const char* input;
-    const char* output;
-    } boolean_test[] = {
-        {"true", "[Boolean] true"},
-        {"true and true", "[Boolean] true"},
-        {"false or false", "[Boolean] false"},
-        {"not false", "[Boolean] true"},
-        {"PI > 4", "[Boolean] false"},
-        {"(1*0) == 0", "[Boolean] true"},
-        {"(5 % 2 + 3 * 2 - 4 / 2) >= 5", "[Boolean] true"},
-        {"(sin(PI / 2) + 1) < 2", "[Boolean] false"},
-        {"1.5 <= 1.5002", "[Boolean] true"},
-        {"true and not true or not true", "[Boolean] false"},
-        {"(cos(0)) <> 1", "[Boolean] false"},
-        {"(3 > 1.75) and true or false", "[Boolean] true"},
-        {"(not (PI <> PI) or false) and (true and not(false and (4>=5)))", "[Boolean] true"},
+        const char* input;
+        const char* output;
+    } var_test[] = {
+        { "a := 3.7", "[Float] a = 3.7"},
+        { "b := 10", "[Integer] b = 10"},
+        { "c := a * 4 + b / 2 - 1", "[Float] c = 18.8"},
+        { "d := \"My\"", "[String] d = My"},
+        { "e := \"Girlfriend\"", "[String] e = Girlfriend"},
+        { "f := c > 5 and b <= 10 or not a < 2.5", "[Boolean] f = true"},
+        { "c + b - a", "[Float] 25.1"},
+        { "a * b / c", "[Float] 1.96809"},
+        { "d + " " + e + \" is cool\"", "[String] My Girlfriend is cool"},
+        { "SUBSTR(d 2 2) + SUBSTR(e 1 1)", "[String] i"},
+        { "c + (a * 2) / b - a", "[Float] 15.84"},
+        { "f or not (b > 8 and a < 4)", "[Boolean] true"},
+        { "d + b + \"--\" + SUBSTR(e 1 2)", "[String] My10--ir"},
+        { "SUBSTR((d + e) 1 3) + \"--\" + a", "[String] yGi--3.7"},
+        { "a + b * (c - 2) / a", "[Float] 49.1054"},
+        { "a > b or f and not (c < 10)", "[Boolean] true"},
+        { "f and b > c or not (a == 3.7)", "[Boolean] false"},
+        { "d + \" - \" + e + \": \" + c + a", "[String] My - Girlfriend: 18.83.7"},
+        { "SUBSTR((d + e) 1 4) + (c - b)", "[String] yGir8.8"},
     };
 
     const struct {
-    const char* input;
-    const char* output;
+        const char* input;
+        const char* output;
     } error_test[] = {
         {"-\"hello\"", " Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'"},
         {"+true",  " Unary Plus Operator (+) cannot be applied to type 'Boolean'. Only type 'Integer' and 'Float'"},
@@ -159,8 +183,9 @@ int validate_results(const char *input_file, const char *output_file) {
         {"5 and \"hello\"", " And (and) operator can only be applied to type 'Boolean'"},
         {"sin(true)", " sin() cannot take a type 'Boolean' as a parameter"},
         {"tan(PI/2)", " Indefinition error"},
-        {"false b8", " Base conversion (b10 to b8) cannot be applied to type 'b8'. Only type 'Integer'"},
-        {"\"testing\" b16", " Base conversion (b10 to b16) cannot be applied to type 'b16'. Only type 'Integer'"}
+        {"false b8", " Base conversion (b10 to b8) cannot be applied to type 'Boolean'. Only type 'Integer'"},
+        {"\"testing\" b16", " Base conversion (b10 to b16) cannot be applied to type 'String'. Only type 'Integer'"},
+        {"a", " Variable 'a' does not exist"}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {
@@ -181,6 +206,27 @@ int validate_results(const char *input_file, const char *output_file) {
             } else {
                 passed++;
                 printf("  %d\t[%d / %d]: %s -----> %s\n", index+1, passed, total_results, arit_test[index].input, buffer);
+            }
+        }
+    }
+    else if(strcmp(input_file, "tests/bool_test.txt") == 0) {
+        total_results = sizeof(boolean_test) / sizeof(boolean_test[0]);
+
+        passed = 0;
+        printf("\n\n\n========================================| %d boolean tests to pass... |========================================\n\n", total_results);
+        for (index = 0; index < total_results; index++) {
+            fgets(buffer, BUFFER_LENGTH, file);
+
+            /* Remove the newline character, if it exists */
+            buffer[strcspn(buffer, "\n")] = '\0';
+
+            /* Compare the result with the expected boolean result */
+            if (strcmp(buffer, boolean_test[index].output)) {
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
+                printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, boolean_test[index].output, buffer);
+            } else {
+                passed++;
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
             }
         }
     }
@@ -205,24 +251,24 @@ int validate_results(const char *input_file, const char *output_file) {
             }
         }
     }
-    else if(strcmp(input_file, "tests/bool_test.txt") == 0) {
-        total_results = sizeof(boolean_test) / sizeof(boolean_test[0]);
+    else if(strcmp(input_file, "tests/var_test.txt") == 0) {
+        total_results = sizeof(var_test) / sizeof(var_test[0]);
 
         passed = 0;
-        printf("\n\n\n========================================| %d boolean tests to pass... |========================================\n\n", total_results);
+        printf("\n\n\n========================================| %d string concat tests to pass... |========================================\n\n", total_results);
         for (index = 0; index < total_results; index++) {
             fgets(buffer, BUFFER_LENGTH, file);
 
             /* Remove the newline character, if it exists */
             buffer[strcspn(buffer, "\n")] = '\0';
 
-            /* Compare the result with the expected boolean result */
-            if (strcmp(buffer, boolean_test[index].output)) {
-                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
-                printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, boolean_test[index].output, buffer);
+            /* Compare the result with the expected string */
+            if (strcmp(buffer, var_test[index].output)) {
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, var_test[index].input, buffer);
+                printf("Result mismatch at line %d: expected \"%s\", got \"%s\"\n\n", index + 1, var_test[index].output, buffer);
             } else {
                 passed++;
-                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, boolean_test[index].input, buffer);
+                printf("  %d\t[%d / %d]: %s -----> \"%s\"\n", index+1, passed, total_results, var_test[index].input, buffer);
             }
         }
     }
