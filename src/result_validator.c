@@ -255,7 +255,7 @@ int validate_results(const char *input_file, const char *output_file) {
         total_results = sizeof(var_test) / sizeof(var_test[0]);
 
         passed = 0;
-        printf("\n\n\n========================================| %d string concat tests to pass... |========================================\n\n", total_results);
+        printf("\n\n\n========================================| %d variables tests to pass... |========================================\n\n", total_results);
         for (index = 0; index < total_results; index++) {
             fgets(buffer, BUFFER_LENGTH, file);
 
