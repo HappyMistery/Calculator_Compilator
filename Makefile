@@ -46,6 +46,12 @@ EG_OUT = output.txt
 
 ######################################################################
 
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
 all: $(BIN) $(BIN_INTERACTIVE)
 
 $(BIN): $(OBJ)
