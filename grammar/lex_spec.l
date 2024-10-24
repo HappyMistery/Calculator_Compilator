@@ -45,16 +45,17 @@ BASE b2|b8|b10|b16
 /********************** RULES **********************/
 %%
 
-"not"       { return NOT; }
-"and"       { return AND; }
-"or"        { return ORR; }
-"PI"        { return PI; }
-"E"         { return E; }
-"sin"       { return SIN; }
-"cos"       { return COS; }
-"tan"       { return TAN; }
-"LEN"       { return LEN; }
-"SUBSTR"    { return SUBSTR; }
+"NOT"|"not"         { return NOT; }
+"AND"|"and"         { return AND; }
+"OR"|"or"           { return ORR; }
+"SIN"|"sin"         { return SIN; }
+"COS"|"cos"         { return COS; }
+"TAN"|"tan"         { return TAN; }
+"LEN"|"len"         { return LEN; }
+"SUBSTR"|"substr"   { return SUBSTR; }
+
+"PI"    { return PI; }
+"E"     { return E; }
 
 {BASE}      { yylval.sval = strdup(yytext); return BASE; }
 
