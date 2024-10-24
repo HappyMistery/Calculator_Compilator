@@ -5,28 +5,27 @@
 #define STR_MAX_LENGTH 200
 
 typedef enum {
-  UNKNOWN_TYPE = 1,
-  INT_TYPE,
-  FLOAT_TYPE,
-  BOOL_TYPE,
-  STRING_TYPE
+    UNKNOWN_TYPE = 1,
+    INT_TYPE,
+    FLOAT_TYPE,
+    BOOL_TYPE,
+    STRING_TYPE
 } data_type;
 
 typedef enum {
-  NO_BASE = 1,
-  BIN_BASE,
-  OCT_BASE,
-  DEC_BASE,
-  HEX_BASE
+    NO_BASE = 1,
+    BIN_BASE,
+    OCT_BASE,
+    DEC_BASE,
+    HEX_BASE
 } base;
 
-
 typedef struct {
-  data_type val_type;
-  int ival;
-  float fval;
-  char* sval;
-  int bval;
+    data_type val_type;
+    int ival;
+    float fval;
+    char* sval;
+    int bval;
 } value_info;
 
 typedef struct {
