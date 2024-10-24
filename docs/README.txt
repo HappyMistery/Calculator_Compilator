@@ -64,6 +64,12 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
 ║                                                                      ║
 ╚══════════════════════════════════<#>═════════════════════════════════╝
 ┌──────────────────────────────────────┐
+│               MAKEFILE:              │
+└──────────────────────────────────────┘
+    1.  La comanda 'make all' requereix que els directoris bin/ i build/
+        existeixin. A més, crea dos binaris executables.
+
+┌──────────────────────────────────────┐
 │                 FLEX:                │
 └──────────────────────────────────────┘
     1.  Només es reconeix un únic TOKEN per a les bases (oct, bin, dec, hex)
@@ -79,11 +85,44 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
 
     4.  Quan es detecta un TOKEN BOOL es passa com a un enter o 0 o 1 en comptes
         de passar-se com una string "true" o "false" per a facilitar la
-        implementació interna
+        implementació interna.
+
+    5.  S'ignoren tant els comentaris com els espais en blanc (\t, \r, etc).
 
 ┌──────────────────────────────────────┐
 │                 BISON:               │
 └──────────────────────────────────────┘
+    1.  Les constants PI i E estàn "hardcoded" al codi, en comptes d'estar
+        emmagatzemades a la taula de símbols (línies 19, 20).
+
+    2.  La variable 'err_mssg' (línia 28) és un array de 150 chars ja que es
+        fa servir per guardar el missatge d'error a loggejar i el missatge més
+        llarg que haurà d'escriure és d'uns 115 chars. Els chars sobrants són 
+        una mesura de precaució.
+
+    3.  La variable booleana 'err' (línia 29) només deixa printar/mostrar
+        el resultat d'una expressió en cas de que no hi hagi hagut un error
+        en l'execució d'aquesta (línies 79, 104, 127, 152).
+
+    4.  Totes les expressions possibles (enteres, reals, boooleanes, string)
+        són del mateix tipus <expr_val> ja que  la comprovació de tipus es fa 
+        de manera interna.
+
+    5.  Cada cop que es fa servir la funció 'type_to_str()', posteriorment
+        s'allibera la memòria usada amb 'free()'.
+
+    6.  Es pot concatenar qualsevol tipus de dada amb qualsevol altre tipus
+        de dada mentre alguna d'aquestes dues dades sigui de tipus string.
+    
+    7.  En els casos en els que s'ha de fer una operació entre un enter i un 
+        real, es casteja el valor de l'enter a real per tal de facilitar 
+        la seva operació (línies 247, 261, 280, ...).
+
+┌──────────────────────────────────────┐
+│                SYMTAB:               │
+└──────────────────────────────────────┘
+    1.  El tipus de dades per emmagatzemar variables és 'id' del fitxer
+        'dades.h'. D'aquesta manera podem guardar tots els seus atributs.
 
 
 ╔══════════════════════════════════<#>═════════════════════════════════╗
