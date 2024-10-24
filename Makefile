@@ -52,7 +52,7 @@ $(BUILD_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-all: $(BIN) $(BIN_INTERACTIVE)
+all: $(BUILD_DIR) $(BIN_DIR) $(BIN) $(BIN_INTERACTIVE)
 
 $(BIN): $(OBJ)
 	$(CC) -o $(BIN) $(CFLAGS) $(SRC) $(SRC_EXTRA) $(YACC_OUT_C) $(LEX_OUT) $(LIB)
