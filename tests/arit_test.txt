@@ -32,15 +32,15 @@
 
 // Basic trigonometric operations (int and float)
 sin(0)            // 0
-cos(0)            // 1
+COS(0)            // 1
 tan(0)            // 0
-sin(PI / 4)      // 0.707107
+SIN(PI / 4)      // 0.707107
 cos(PI / 4)      // 0.707107
 tan(PI / 4)      // 1
 
 // Complex trigonometric operations (int and float)
 cos(PI / 3)      // 0.5
-tan(PI / 3)      // 1.73205
+TAN(PI / 3)      // 1.73205
 
 // Basic mixed operations (int and trig)
 LEN("Las estrellas brillan de noche") + sin(30)     // 29.012
@@ -58,7 +58,7 @@ LEN("Las estrellas brillan de noche") + sin(30)     // 29.012
 
 // Complex mixed operations (float and trig)
 (7.5 + sin(PI / 4)) * 2 - 1.5 // 14.9142
-10.2 - (3 * cos(PI / LEN("duck"))) + 1.5 // 9.57868
+10.2 - (3 * cos(PI / len("duck"))) + 1.5 // 9.57868
 
 // Basic constant operations (PI and E)
 PI                 // 3.14159

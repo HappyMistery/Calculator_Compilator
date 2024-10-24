@@ -1,15 +1,1 @@
-Error at line 3: Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'
-Error at line 4: Unary Plus Operator (+) cannot be applied to type 'Boolean'. Only type 'Integer' and 'Float'
-Error at line 5: Addition (+) operator cannot be applied to type 'Boolean'
-Error at line 6: Subtraction (-) operator cannot be applied to type 'String'
-Error at line 7: Division by zero
-Error at line 8: Modulo by zero
-Error at line 9: Power (**) operator cannot be applied to type 'String'
-Error at line 9: Higher (>) operator cannot be applied to type 'String'
-Error at line 11: And (and) operator can only be applied to type 'Boolean'
-Error at line 12: sin() cannot take a type 'Boolean' as a parameter
-Error at line 13: Indefinition error
-Error at line 13: Base conversion (b10 to b8) cannot be applied to type 'Boolean'. Only type 'Integer'
-Error at line 14: Base conversion (b10 to b16) cannot be applied to type 'String'. Only type 'Integer'
-Error at line 16: Variable 'a' does not exist
-
+Error at line 2: Or (or) operator can only be applied to type 'Boolean'

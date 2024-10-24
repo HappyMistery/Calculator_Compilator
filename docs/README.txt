@@ -1,18 +1,17 @@
-##>=================================<#>================================<##
-||                                                                      ||
-||                          Compiladors - PRAC1                         ||
-||                         Calculator_Compilator                        ||
-||                           Jaume Tello Viñas                          ||
-||                             GEI 2024-2025                            ||
-||                                                                      ||
-##>=================================<#>================================<##
+╔══════════════════════════════════<#>═════════════════════════════════╗
+║                                                                      ║
+║                          Compiladors - PRAC1                         ║
+║                         Calculator_Compilator                        ║
+║                           Jaume Tello Viñas                          ║
+║                             GEI 2024-2025                            ║
+║                                                                      ║
+╚══════════════════════════════════<#>═════════════════════════════════╝
 
-##>=================================<#>================================<##
-||                                                                      ||
-||                        Compilació i execució                         ||
-||                                                                      ||
-##>=================================<#>================================<##
-
+╔══════════════════════════════════<#>═════════════════════════════════╗
+║                                                                      ║
+║                        Compilació i execució                         ║
+║                                                                      ║
+╚══════════════════════════════════<#>═════════════════════════════════╝
 ┌──────────────────────────────────────┐
 │              ABANS DE RES:           │
 └──────────────────────────────────────┘
@@ -42,34 +41,61 @@ Es recomana l'ús de la comanda següent:
 │               EXECUCIÓ:              │
 └──────────────────────────────────────┘
 Un cop compilat el codi font, obtenim 2 executables:
-    1. ./calc_compiler.exe 'input_file.txt' 'output_file.txt':
+    1. bin/calc_compiler 'input_file.txt' 'output_file.txt':
         Aquest executable pren com a primer paràmetre un arxiu de text (.txt) 
         amb les instruccions a executar (una instrucció per línia).
         Com a segon paràmetre rep un arxiu de text (.txt) que servirà 
         per emmagatzemar les sortides de cada operació feta.
 
 
-    2. ./calc_compiler_interactive.exe:
+    2. bin/calc_compiler_interactive.exe:
         Aquest executable no pren cap paràmetre sinó que al executar-se 
         va demanant a l'usuari que introdueixi una expressió.
         En aquest cas, els resultats sortiran per pantalla en comptes de
         ser guardats en un arxiu de text (.txt).
 
-Els errors detectats durant l'execució de qualsevol dels executables seran
-emmagatzemats a l'arxiu 'error_log.txt'.
+Els errors detectats durant l'execució de qualsevol dels binaris seran
+emmagatzemats a l'arxiu 'logs/error_log.txt'.
+
+
+╔══════════════════════════════════<#>═════════════════════════════════╗
+║                                                                      ║
+║                         Decisions de disseny                         ║
+║                                                                      ║
+╚══════════════════════════════════<#>═════════════════════════════════╝
+┌──────────────────────────────────────┐
+│                 FLEX:                │
+└──────────────────────────────────────┘
+    1.  Només es reconeix un únic TOKEN per a les bases (oct, bin, dec, hex)
+        en comptes de un TOKEN per a cada base. Això és degut a que l'arxiu
+        bison ja s'encarrega de trobar de quina base es tracta
+
+    2.  Les paraules reservades poden ser escrites tant en majúscules com en 
+        minúscules mentre que les constants 'E' i 'PI' només poden ser escrites
+        en majúscules.
+
+    3.  Quan es detecta un TOKEN STRING se l'hi eliminen les cometes
+        i se l'hi afegeix un delimitador '\0'.
+
+    4.  Quan es detecta un TOKEN BOOL es passa com a un enter o 0 o 1 en comptes
+        de passar-se com una string "true" o "false" per a facilitar la
+        implementació interna
+
+┌──────────────────────────────────────┐
+│                 BISON:               │
+└──────────────────────────────────────┘
+
+
+╔══════════════════════════════════<#>═════════════════════════════════╗
+║                                                                      ║
+║                       Funcionalitats adicionals                      ║
+║                                                                      ║
+╚══════════════════════════════════<#>═════════════════════════════════╝
 
 
 
-##>=================================<#>================================<##
-||                                                                      ||
-||                         Decisions de disseny                         ||
-||                                                                      ||
-##>=================================<#>================================<##
-
-
-
-##>=================================<#>================================<##
-||                                                                      ||
-||                              Limitacions                             ||
-||                                                                      ||
-##>=================================<#>================================<##
+╔══════════════════════════════════<#>═════════════════════════════════╗
+║                                                                      ║
+║                              Limitacions                             ║
+║                                                                      ║
+╚══════════════════════════════════<#>═════════════════════════════════╝
