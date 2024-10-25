@@ -14,6 +14,7 @@
   FILE* error_log;
   extern FILE *yyout;
   extern int yylineno;
+  extern char* input;
   #define YYERROR_VERBOSE 1
 
   const double PI_CONST = 3.141592653589793;
@@ -556,13 +557,14 @@ expr_term:
 void custom_err_mssg(const char *s) {
     err = true;
     if (error_log == NULL) {
-        error_log = fopen("error_log.txt", "w");
+        error_log = fopen("logs/error_log.txt", "w");
         if (!error_log) {
             fprintf(stderr, "Error: Could not open error_log.txt for writing.\n");
             return;
         }
     }
     printf("ERROR\n");
+    fprintf(error_log, "%s\n", input);
     fprintf(error_log, "Error at line %d: %s\n", yylineno, s);
     fflush(error_log);
 }

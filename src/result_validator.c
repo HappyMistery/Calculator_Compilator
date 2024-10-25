@@ -279,6 +279,7 @@ int validate_results(const char *input_file, const char *output_file) {
         printf("\n\n\n========================================| %d error tests to pass... |========================================\n\n", total_results);
         for (index = 0; index < total_results; index++) {
             fgets(buffer, BUFFER_LENGTH, err_file);
+            fgets(buffer, BUFFER_LENGTH, err_file);
 
             /* Remove the newline character, if it exists */
             buffer[strcspn(buffer, "\n")] = '\0';

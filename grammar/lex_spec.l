@@ -12,6 +12,8 @@
     #include <math.h>
 
     int current_column = 1;
+    char expression_buffer[512] = "";
+    char* input;
 
     void yyerror(const char *s);
     #ifndef strdup
@@ -23,6 +25,11 @@
         return copy;
     }
     #endif
+
+
+    void append_to_buffer(const char* text) {
+        strcat(expression_buffer, text);
+    }
 
     int fileno(FILE *stream);
 %}
@@ -45,34 +52,35 @@ BASE b2|b8|b10|b16
 /********************** RULES **********************/
 %%
 
-"NOT"|"not"         { return NOT; }
-"AND"|"and"         { return AND; }
-"OR"|"or"           { return ORR; }
-"SIN"|"sin"         { return SIN; }
-"COS"|"cos"         { return COS; }
-"TAN"|"tan"         { return TAN; }
-"LEN"|"len"         { return LEN; }
-"SUBSTR"|"substr"   { return SUBSTR; }
+"NOT"|"not"         { append_to_buffer(yytext); return NOT; }
+"AND"|"and"         { append_to_buffer(yytext); return AND; }
+"OR"|"or"           { append_to_buffer(yytext); return ORR; }
+"SIN"|"sin"         { append_to_buffer(yytext); return SIN; }
+"COS"|"cos"         { append_to_buffer(yytext); return COS; }
+"TAN"|"tan"         { append_to_buffer(yytext); return TAN; }
+"LEN"|"len"         { append_to_buffer(yytext); return LEN; }
+"SUBSTR"|"substr"   { append_to_buffer(yytext); return SUBSTR; }
 
-"PI"    { return PI; }
-"E"     { return E; }
+"PI"    { append_to_buffer(yytext); return PI; }
+"E"     { append_to_buffer(yytext); return E; }
 
-{BASE}      { yylval.sval = strdup(yytext); return BASE; }
+{BASE}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return BASE; }
 
 
-{INT}       { yylval.ival = atoi(yytext); return INT; }
-{EXP}       { yylval.fval = atof(yytext); return FLOAT; }
-{FLOAT}     { yylval.fval = atof(yytext); return FLOAT; }
-{STRING}    { char *temp = strdup(yytext);
-              temp[yyleng - 1] = '\0'; /* eliminar cometes finals canviantles per el delimitador*/
-              yylval.sval = strdup(temp + 1); /* eliminar cometes inicials movent el punter a temp en 1 pos */
-              free(temp);
-              return STRING; 
+{INT}       { append_to_buffer(yytext); yylval.ival = atoi(yytext); return INT; }
+{EXP}       { append_to_buffer(yytext); yylval.fval = atof(yytext); return FLOAT; }
+{FLOAT}     { append_to_buffer(yytext); yylval.fval = atof(yytext); return FLOAT; }
+{STRING}    { append_to_buffer(yytext); 
+                char *temp = strdup(yytext);
+                temp[yyleng - 1] = '\0'; /* eliminar cometes finals canviantles per el delimitador*/
+                yylval.sval = strdup(temp + 1); /* eliminar cometes inicials movent el punter a temp en 1 pos */
+                free(temp);
+                return STRING; 
             }
-{BOOL}      { yylval.ival = (strcmp(yytext, "true") == 0) ? 1 : 0; return BOOL; }
+{BOOL}      { append_to_buffer(yytext); yylval.ival = (strcmp(yytext, "true") == 0) ? 1 : 0; return BOOL; }
 
 
-{ID}        {
+{ID}        {   append_to_buffer(yytext); 
                 yylval.id.name = strdup(yytext);
                 yylval.id.length = yyleng;
                 yylval.id.line = yylineno;
@@ -80,28 +88,31 @@ BASE b2|b8|b10|b16
                 yylval.id.base = NO_BASE;
                 return ID;
             }
-{COMM}      {}
+{COMM}      { append_to_buffer(yytext); }
 
-":="        { return ASSIGN; }
+":="        { append_to_buffer(yytext); return ASSIGN; }
 
-"+"         { return ADD; }
-"-"         { return SUB; }
-"*"         { return MUL; }
-"/"         { return DIV; }
-"%"         { return MOD; }
-"**"        { return POW; }
+"+"         { append_to_buffer(yytext); return ADD; }
+"-"         { append_to_buffer(yytext); return SUB; }
+"*"         { append_to_buffer(yytext); return MUL; }
+"/"         { append_to_buffer(yytext); return DIV; }
+"%"         { append_to_buffer(yytext); return MOD; }
+"**"        { append_to_buffer(yytext); return POW; }
 
-">"         { return HIG; }
-">="        { return HEQ; }
-"<"         { return LOW; }
-"<="        { return LEQ; }
-"=="        { return EQU; }
-"<>"        { return NEQ; }
+">"         { append_to_buffer(yytext); return HIG; }
+">="        { append_to_buffer(yytext); return HEQ; }
+"<"         { append_to_buffer(yytext); return LOW; }
+"<="        { append_to_buffer(yytext); return LEQ; }
+"=="        { append_to_buffer(yytext); return EQU; }
+"<>"        { append_to_buffer(yytext); return NEQ; }
 
-"("         { return OP; }
-")"         { return CP; }
+"("         { append_to_buffer(yytext); return OP; }
+")"         { append_to_buffer(yytext); return CP; }
 
-\n          { current_column = 1; return ENDLINE; }
+\n          {   input = strdup(expression_buffer);
+                expression_buffer[0] = '\0';
+                current_column = 1; 
+                return ENDLINE; }
 [ \t\r]+    { /* Ignore whitespace */ }
 
 .           { printf("UNKNOWN: %s\n", yytext); }
