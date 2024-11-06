@@ -1,3 +1,29 @@
-(null)
-Error at line 1: Variable 'wa' does not exist
+-"hello"
+Error at line 3: Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'
++true
+Error at line 4: Unary Plus Operator (+) cannot be applied to type 'Boolean'. Only type 'Integer' and 'Float'
+5+false
+Error at line 5: Addition (+) operator cannot be applied to type 'Boolean'
+"hello"-3
+Error at line 6: Subtraction (-) operator cannot be applied to type 'String'
+10/0
+Error at line 7: Division by zero
+5%0
+Error at line 8: Modulo by zero
+"hello"**2
+Error at line 9: Power (**) operator cannot be applied to type 'String'
+"hello"**2
+Error at line 9: Higher (>) operator cannot be applied to type 'String'
+5and"hello"
+Error at line 11: And (and) operator can only be applied to type 'Boolean'
+sin(true)
+Error at line 12: sin() cannot take a type 'Boolean' as a parameter
+tan(PI/2)
+Error at line 13: Indefinition error
+tan(PI/2)
+Error at line 13: Base conversion (b10 to b8) cannot be applied to type 'Boolean'. Only type 'Integer'
+falseb8
+Error at line 14: Base conversion (b10 to b16) cannot be applied to type 'String'. Only type 'Integer'
+a
+Error at line 16: Variable 'a' does not exist
 

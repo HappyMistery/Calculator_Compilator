@@ -30,7 +30,7 @@ char* result_to_string(char* type, double res) {
  
 int validate_results(const char *input_file, const char *output_file) {
     FILE *file = fopen(output_file, "r");
-    FILE *err_file = fopen("error_log.txt", "r");
+    FILE *err_file = fopen("logs/error_log.txt", "r");
     char buffer[BUFFER_LENGTH];
     if (!file) {
         printf("Failed to open result file: %s\n", output_file);
