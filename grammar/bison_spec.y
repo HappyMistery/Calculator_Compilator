@@ -25,10 +25,13 @@
   void cast_vals_to_flt(value_info *op1, value_info *op2);
   char* switch_bases(value_info *val, base base);
   void custom_err_mssg(const char *s);
+  void buildTable(char *vars[], int var_index);
 
   char err_mssg[150];
   bool err = false;
   char *to_str;
+  char *vars[256];
+  int var_index = 0;
 %}
 %define parse.error verbose
 %locations
@@ -58,6 +61,7 @@
                       NOT AND ORR
                       LEN SUBSTR
                       OP CP
+                      SHVAR
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
@@ -97,6 +101,8 @@ stmnt:
                                     $1.id_val.sval = $3.sval;
                                 }
                                 sym_enter($1.name, &$1);
+                                vars[var_index] = $1.name;
+                                var_index++;
                                 free(to_str);
                             } 
                             err = false;
@@ -119,6 +125,8 @@ stmnt:
                                         fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_bases(&$3, $1.base));
                                         $1.id_val.ival = $3.ival;
                                         sym_enter($1.name, &$1);
+                                        vars[var_index] = $1.name;
+                                        var_index++;
                                         free(to_str);
                                     }
                                 } 
@@ -170,6 +178,10 @@ stmnt:
                         } 
                         err = false;
                     }
+    |   SHVAR       { 
+                        buildTable(vars, var_index);
+                    }
+
 ;
 
 expr:

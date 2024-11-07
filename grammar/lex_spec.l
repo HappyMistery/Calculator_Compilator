@@ -64,6 +64,8 @@ BASE b2|b8|b10|b16
 "PI"    { append_to_buffer(yytext); return PI; }
 "E"     { append_to_buffer(yytext); return E; }
 
+"showVars()"    { append_to_buffer(yytext); return SHVAR; }
+
 {BASE}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return BASE; }
 
 

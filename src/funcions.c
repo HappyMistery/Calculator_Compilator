@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dades.h"
+#include "symtab.h"
 
 extern int yyparse();
 extern FILE *yyin;
@@ -163,4 +164,166 @@ char* switch_bases(value_info *val, base base) {
         return result;
     }
     return "";
+}
+
+void buildTable(char *vars[], int var_index) {
+    int max_name_length = strlen("Name");
+    int max_type_length = strlen("Type");
+    int max_value_length = strlen("Value");
+    int i, j;
+    id var;
+
+    for (i = 0; i < var_index; i++) {
+        sym_lookup(vars[i], &var);
+        int name_length = strlen(var.name);
+        int type_length = strlen(type_to_str(var.id_val.val_type));
+
+        char value_buffer[512];
+        switch (var.id_val.val_type) {
+            case INT_TYPE:
+                sprintf(value_buffer, "%d", var.id_val.ival);
+                break;
+            case FLOAT_TYPE:
+                sprintf(value_buffer, "%.2f", var.id_val.fval);
+                break;
+            case STRING_TYPE:
+                sprintf(value_buffer, "%s", var.id_val.sval);
+                break;
+            case BOOL_TYPE:
+                sprintf(value_buffer, "%s", var.id_val.bval ? "true" : "false");
+                break;
+            default:
+                sprintf(value_buffer, "N/A");
+                break;
+        }
+        int value_length = strlen(value_buffer);
+
+        if (name_length > max_name_length) {
+            max_name_length = name_length;
+        }
+        if (type_length > max_type_length) {
+            max_type_length = type_length;
+        }
+        if (value_length > max_value_length) {
+            max_value_length = value_length;
+        }
+    }
+
+    printf("┌");
+    for (i = 0; i < max_name_length; i++) {
+        printf("─");
+    }
+    printf("┬─");
+    for (i = 0; i < max_type_length; i++) {
+        printf("─");
+    }
+    printf("─┬");
+    for (i = 0; i < max_value_length; i++) {
+        printf("─");
+    }
+    printf("┐\n");
+
+    printf("│Name");
+    for (i = 0; i < max_name_length - strlen("Name"); i++) {
+        printf(" ");
+    }
+    printf("│Type  ");
+    for (i = 0; i < max_type_length - strlen("Type"); i++) {
+        printf(" ");
+    }
+    printf("│Value");
+    for (i = 0; i < max_value_length - strlen("Value"); i++) {
+        printf(" ");
+    }
+    printf("│\n");
+
+    printf("├");
+    for (i = 0; i < max_name_length; i++) {
+        printf("─");
+    }
+    printf("┼─");
+    for (i = 0; i < max_type_length; i++) {
+        printf("─");
+    }
+    printf("─┼");
+    for (i = 0; i < max_value_length; i++) {
+        printf("─");
+    }
+    printf("┤\n");
+
+    for (i = 0; i < var_index; i++) {
+        sym_lookup(vars[i], &var);
+
+        char value_buffer[512];
+        switch (var.id_val.val_type) {
+            case INT_TYPE:
+                sprintf(value_buffer, "%d", var.id_val.ival);
+                break;
+            case FLOAT_TYPE:
+                sprintf(value_buffer, "%g", var.id_val.fval);
+                break;
+            case STRING_TYPE:
+                sprintf(value_buffer, "%s", var.id_val.sval);
+                break;
+            case BOOL_TYPE:
+                sprintf(value_buffer, "%s", var.id_val.bval ? "true" : "false");
+                break;
+            default:
+                sprintf(value_buffer, "N/A");
+                break;
+        }
+
+        printf("│");
+        printf("%s", var.name);
+        int padding = max_name_length - strlen(var.name);
+        for (j = 0; j < padding; j++) {
+            printf(" ");
+        }
+
+        printf("│ ");
+        printf("%s", type_to_str(var.id_val.val_type));
+        padding = max_type_length - strlen(type_to_str(var.id_val.val_type));
+        for (j = 0; j < padding; j++) {
+            printf(" ");
+        }
+
+        printf(" │");
+        printf("%s", value_buffer);
+        padding = max_value_length - strlen(value_buffer);
+        for (j = 0; j < padding; j++) {
+            printf(" ");
+        }
+
+        printf("│\n");
+
+        if (i < var_index - 1) {
+            printf("├");
+            for (j = 0; j < max_name_length; j++) {
+                printf("─");
+            }
+            printf("┼─");
+            for (j = 0; j < max_type_length; j++) {
+                printf("─");
+            }
+            printf("─┼");
+            for (j = 0; j < max_value_length; j++) {
+                printf("─");
+            }
+            printf("┤\n");
+        }
+    }
+
+    printf("└");
+    for (i = 0; i < max_name_length; i++) {
+        printf("─");
+    }
+    printf("┴─");
+    for (i = 0; i < max_type_length; i++) {
+        printf("─");
+    }
+    printf("─┴");
+    for (i = 0; i < max_value_length; i++) {
+        printf("─");
+    }
+    printf("┘\n");
 }

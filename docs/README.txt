@@ -130,7 +130,11 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
 ║                       Funcionalitats adicionals                      ║
 ║                                                                      ║
 ╚══════════════════════════════════<#>═════════════════════════════════╝
-
+    1.  S'ha afegit una funció interna que es crida amb la comanda següent:
+                                "showVars()"
+        que mostrarà en forma de taula ASCII totes les variables definides
+        fins al moment de la crida. Aquesta taula conté 3 columnes per a 
+        mostrar el nom, el tipus i el valor de cada variable.
 
 
 ╔══════════════════════════════════<#>═════════════════════════════════╗
@@ -138,3 +142,5 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
 ║                              Limitacions                             ║
 ║                                                                      ║
 ╚══════════════════════════════════<#>═════════════════════════════════╝
+    1.  No hi han limitacions respecte al que es demana a l'enunciat 
+        de la pràctica.
