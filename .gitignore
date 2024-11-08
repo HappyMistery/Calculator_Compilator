@@ -4,4 +4,4 @@ bison_spec.output
 bison_spec.tab.*
 lex.*
 output.txt
-.vscode/
+/.vscode/
