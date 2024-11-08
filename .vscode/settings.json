@@ -1,8 +1,0 @@
-{
-    "C_Cpp.errorSquiggles": "enabled",
-    "files.associations": {
-        "bison_spec.tab.h": "c",
-        "result_validator.h": "c",
-        "stdarg.h": "c"
-    }
-}
