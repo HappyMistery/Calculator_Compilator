@@ -1,16 +1,16 @@
 #Basic boolean operations
-true
-true and true
-false OR false
-not false
-PI > 4
-(1*0) == 0
-(5 % 2 + 3 * 2 - 4 / 2) >= 5
-(sin(PI / 2) + 1) < 2
-1.5 <= 1.5002
-true and NOT true or not true
-(cos(0)) <> 1
+true        //true
+true and true   //true
+false OR false  //false
+not false   //true
+PI > 4      //false
+(1*0) == 0  //true
+(5 % 2 + 3 * 2 - 4 / 2) >= 5 //true
+(sin(PI / 2) + 1) < 2       //false
+1.5 <= 1.5002       //true
+true and NOT true or not true   //false
+(cos(0)) <> 1       //false
 
 #Mixed boolean operations
-(3 > 1.75) AND true or false
-(not (PI <> PI) OR false) and (true and NOT(false and (4>=5)))
+(3 > 1.75) AND true or false    //true
+(not (PI <> PI) OR false) and (true and NOT(false and (4>=5)))  //true

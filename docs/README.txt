@@ -143,4 +143,10 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
 ║                                                                      ║
 ╚══════════════════════════════════<#>═════════════════════════════════╝
     1.  No hi han limitacions respecte al que es demana a l'enunciat 
-        de la pràctica.
+        de la pràctica. 
+        Lo únic que podria considerar-se una limitació
+        és el fet de que hi ha 1 conflicte shift/reduce degut a l'operació
+        de la potència (línia 344 a bison_spec.y). Actualment, i per a que 
+        la potència funcioni tal i com es demana, la gramàtica ha 
+        d'especificar "expr3 POW expr2" però això dona el conflicte. En canvi,
+        si s'especifica "expr2 POW expr3", el conflicte desapareix.

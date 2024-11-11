@@ -1,6 +1,0 @@
-enter_var := 12332
-cadena := "hola bon dia com estas"
-valBool := true or false and 1 < 2
-fl := 4.56
-dadawdaw := "wadawdw"
-showVars()

@@ -1,15 +1,15 @@
 // Error handling
--"hello"
-+true
-5 + false
-"hello" - 3
-10/0
-5%0
-"hello" ** 2
-"abc" > 123
-5 and "hello"
-sin(true)
-tan(PI/2)
-false b8
-"testing" b16
-a
+-"hello"        //Unary Minus Operator (-) cannot be applied to type 'String'. Only type 'Integer' and 'Float'
++true           //Unary Plus Operator (+) cannot be applied to type 'Boolean'. Only type 'Integer' and 'Float'
+5 + false       //Addition (+) operator cannot be applied to type 'Boolean'
+"hello" - 3     //Subtraction (-) operator cannot be applied to type 'String'
+10/0        //Division by zero
+5%0     //Modulo by zero
+"hello" ** 2        //Power (**) operator cannot be applied to type 'String'
+"abc" > 123     //Higher (>) operator cannot be applied to type 'String'
+5 and "hello"       //And (and) operator can only be applied to type 'Boolean'
+sin(true)       //sin() cannot take a type 'Boolean' as a parameter
+tan(PI/2)       //Indefinition error
+false b8        //Base conversion (b10 to b8) cannot be applied to type 'Boolean'. Only type 'Integer'
+"testing" b16       //Base conversion (b10 to b16) cannot be applied to type 'String'. Only type 'Integer'
+a       //Variable 'a' does not exist

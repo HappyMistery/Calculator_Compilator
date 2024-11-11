@@ -1,22 +1,22 @@
 // Assignations
 a := 3.7
 b := 10
-c := a * 4 + b / 2 - 1
+c := a * 4 + b / 2 - 1  //18.8
 d := "My"
 e := "Girlfriend"
-f := c > 5 and b <= 10 OR not a < 2.5
+f := c > 5 and b <= 10 OR not a < 2.5   //true
 
 // Operations with variables
-c + b - a
-a * b / c
-d + " " + e + " is cool"
-SUBSTR(d 2 2) + substr(e 1 1)
-c + (a * 2) / b - a
-f or not (b > 8 AND a < 4)
-d + b + "--" + SUBSTR(e 1 2)
-substr((d + e) 1 3) + "--" + a
-a + b * (c - 2) / a
-a > b or f and NOT (c < 10)
-f and b > c or not (a == 3.7)
-d + " - " + e + ": " + c + a
-SUBSTR((d + e) 1 4) + (c - b)
+c + b - a   //25.1
+a * b / c   //1.96809
+d + " " + e + " is cool"    //My Girlfriend is cool
+SUBSTR(d 2 2) + substr(e 1 1)   //i
+c + (a * 2) / b - a     //15.84
+f or not (b > 8 AND a < 4)  //true
+d + b + "--" + SUBSTR(e 1 2)    //My10--ir
+substr((d + e) 1 3) + "--" + a  //yGi--3.7
+a + b * (c - 2) / a     //49.1054
+a > b or f and NOT (c < 10)     //true
+f and b > c or not (a == 3.7)   //false
+d + " - " + e + ": " + c + a    //My - Girlfriend: 18.83.7
+SUBSTR((d + e) 1 4) + (c - b)   //yGir8.8

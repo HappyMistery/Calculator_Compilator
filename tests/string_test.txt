@@ -4,20 +4,20 @@ string concat (+),
 SUBSTR and both of them 
 at the same time
 */
-"Hello, " + "World!"                      // Basic string concatenation
-"Good " + "Morning " + "Everyone"           // Multiple strings concatenation
-"The result is: " + "42"                  // Concatenating a string with a numeric string
-SUBSTR("Hello professor" 6 10)           // Basic substringing
-"A boolean can be" + " either " + true + " or " + false     //String concatenation with a boolean
-"Pi is approximately: " + "3.14"          // String with numeric value
-"C" + "++" + " Programming"                  // Concatenating without spaces
-"Concatenation of " + "this" + " and " + "that" // Concatenating with spaces
-"Hello " + "there, " + "how " + "are " + "you?" // Greeting concatenation
-"String " + "operations " + "are " + "fun!"   // Fun statement concatenation
-substr(("xd" + 123) 2 3)                    // Substring of a concatenation
-"To say that 1 == 1 is " + true and (1==1)    // String concat with boolean operations
-"The quick " + "brown " + "fox " + "jumps"    // Concatenation of a phrase
-"Concatenating " + "strings " + "in C"       // Concatenating in C
-"hola" + SUBSTR("hola pepe" 5 4)            // Concatenating string with substring
-LEN("NO COnfLIcts") + " finally"            // Concatenating result of LEN() with string
-SUBSTR("hola pepe" LEN("hola ") len("pepe"))    //Nested functions
+"Hello, " + "World!"                      // Hello, World!
+"Good " + "Morning " + "Everyone"           // Good Morning Everyone
+"The result is: " + "42"                  // The result is: 42
+SUBSTR("Hello professor" 6 10)           // professor
+"A boolean can be" + " either " + true + " or " + false     //A boolean can be either true or false
+"Pi is approximately: " + "3.14"          // Pi is approximately: 3.14
+"C" + "++" + " Programming"                  // C++ Programming
+"Concatenation of " + "this" + " and " + "that" // Concatenation of this and that
+"Hello " + "there, " + "how " + "are " + "you?" // Hello there, how are you?
+"String " + "operations " + "are " + "fun!"   // String operations are fun!
+substr(("xd" + 123) 2 3)                    // 123
+"To say that 1 == 1 is " + true and (1==1)    // To say that 1 == 1 is true
+"The quick " + "brown " + "fox " + "jumps"    // The quick brown fox jumps
+"Concatenating " + "strings " + "in C"       // Concatenating strings in C
+"hola" + SUBSTR("hola pepe" 5 4)            // holapepe
+LEN("NO COnfLIcts") + " finally"            // 12 finally
+SUBSTR("hola pepe" LEN("hola ") len("pepe"))    //pepe
