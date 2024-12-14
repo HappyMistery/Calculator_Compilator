@@ -6,3 +6,4 @@ lex.*
 output.txt
 /.vscode/
 logs/error_log.txt
+intermediate/c3a.txt

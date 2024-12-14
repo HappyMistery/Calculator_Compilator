@@ -4,21 +4,3 @@ valBool := true or false and 1 < 2
 fl := 4.56
 dadawdaw := "wadawdw"
 showVars()
-
-/*
-Should print the following table:
-┌─────────┬─────────┬──────────────────────┐
-│Name     │Type     │Value                 │
-├─────────┼─────────┼──────────────────────┤
-│enter_var│ Integer │12332                 │
-├─────────┼─────────┼──────────────────────┤
-│cadena   │ String  │hola bon dia com estas│
-├─────────┼─────────┼──────────────────────┤
-│valBool  │ Boolean │true                  │
-├─────────┼─────────┼──────────────────────┤
-│fl       │ Float   │4.56                  │
-├─────────┼─────────┼──────────────────────┤
-│dadawdaw │ String  │wadawdw               │
-└─────────┴─────────┴──────────────────────┘
-If you get a segmentation fault, it's because of the length of this comment :=)
-*/
