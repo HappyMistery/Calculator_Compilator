@@ -12,6 +12,7 @@
 
   int yydebug = 1;
   FILE* error_log;
+  extern FILE* out3ac;
   extern FILE *yyout;
   extern int yylineno;
   extern char* input;
@@ -22,16 +23,21 @@
 
   int yylex(void);
   void yyerror(const char *s);
-  void cast_vals_to_flt(value_info *op1, value_info *op2);
+  void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac);
   char* switch_bases(value_info *val, base base);
   void custom_err_mssg(const char *s);
+  void c3a(const char *s);
   void buildTable(char *vars[], int var_index);
 
   char err_mssg[150];
+  char c3a_mssg[256];
+  char temp[256];
   bool err = false;
   char *to_str;
   char *vars[256];
   int var_index = 0;
+  int c3aLineNo = 0;
+  int c3aOpCount = 1;
 %}
 %define parse.error verbose
 %locations
@@ -86,10 +92,14 @@ stmnt:
                                 to_str = type_to_str($1.id_val.val_type);
                                 if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
                                     fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
+                                    sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
+                                    c3a(c3a_mssg);
                                     $1.id_val.ival = $3.ival;
                                 }
                                 else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
                                     fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
+                                    sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
+                                    c3a(c3a_mssg);
                                     $1.id_val.fval = $3.fval;
                                 }
                                 else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
@@ -104,6 +114,7 @@ stmnt:
                                 vars[var_index] = $1.name;
                                 var_index++;
                                 free(to_str);
+                                c3aOpCount = 1;
                             } 
                             err = false;
                         }
@@ -188,11 +199,17 @@ expr:
     SUB expr1   { /* Can only use Unary Minus Operator (-) with a number */
                     if ($2.val_type == INT_TYPE) {
                         $$.val_type = INT_TYPE; 
-                        $$.ival = -$2.ival; 
+                        $$.ival = -$2.ival;
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := CHSI %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg);
                     }
                     else if ($2.val_type == FLOAT_TYPE) {
                         $$.val_type = FLOAT_TYPE; 
-                        $$.fval = -$2.fval; 
+                        $$.fval = -$2.fval;
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := CHSF %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg);
                     }
                     else {
                         to_str = type_to_str($2.val_type);
@@ -204,11 +221,17 @@ expr:
   | ADD expr1   { /* Can only use Unary Plus Operator (+) with a number */
                     if ($2.val_type == INT_TYPE) { 
                         $$.val_type = INT_TYPE; 
-                        $$.ival = +$2.ival; 
+                        $$.ival = +$2.ival;
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := CHSI %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg);
                     }
                     else if ($2.val_type == FLOAT_TYPE) { 
                         $$.val_type = FLOAT_TYPE; 
-                        $$.fval = +$2.fval; 
+                        $$.fval = +$2.fval;
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := CHSF %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg);
                     }
                     else { 
                         to_str = type_to_str($2.val_type);
@@ -221,7 +244,7 @@ expr:
                         if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
                             char str1[255];
                             char* str;
-                            cast_vals_to_flt(&$1, &$3);
+                            cast_vals_to_flt(&$1, &$3, false);
                             $$.val_type = STRING_TYPE;
                             if ($1.val_type == STRING_TYPE) { /* If 1st operand is a string, then 2nd is any other type */
                                 if ($3.val_type == STRING_TYPE) {  /* If both operands are a string, concatenate them */
@@ -257,12 +280,18 @@ expr:
                         else if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                             custom_err_mssg("Addition (+) operator cannot be applied to type 'Boolean'");
                         else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float addition */
-                            cast_vals_to_flt(&$1, &$3); 
+                            cast_vals_to_flt(&$1, &$3, true);
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = $1.fval + $3.fval;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s ADDF %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer addition */
                             $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival + $3.ival; 
+                            $$.ival = $1.ival + $3.ival;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s ADDI %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         }
                     }
   | expr SUB expr1  { /* Booleans and Strings cannot use the subtraction operator */
@@ -271,12 +300,18 @@ expr:
                         else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                             custom_err_mssg("Subtraction (-) operator cannot be applied to type 'String'");
                         else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {  /* If some operand is a Float, do a Float subtraction */
-                            cast_vals_to_flt(&$1, &$3); 
+                            cast_vals_to_flt(&$1, &$3, true); 
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = $1.fval - $3.fval;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s SUBF %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer subtraction */
                             $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival - $3.ival; 
+                            $$.ival = $1.ival - $3.ival;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s SUBI %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         }
                     }
   | expr1
@@ -290,16 +325,22 @@ expr1:
                         else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                             custom_err_mssg("Multiplication (*) operator cannot be applied to type 'String'");
                         else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {  /* If some operand is a Float, do a Float multiplication */
-                            cast_vals_to_flt(&$1, &$3); 
+                            cast_vals_to_flt(&$1, &$3, true); 
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = $1.fval * $3.fval;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s MULF %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer multiplication */
                             $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival * $3.ival; 
+                            $$.ival = $1.ival * $3.ival;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s MULI %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         }
                     }
   | expr1 DIV expr2 { 
-                        cast_vals_to_flt(&$1, &$3); /* floats are used for the operation in order to get a float result */
+                        cast_vals_to_flt(&$1, &$3, true); /* floats are used for the operation in order to get a float result */
                         /* Booleans and Strings cannot use the division operator */
                         if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                             custom_err_mssg("Division (/) operator cannot be applied to type 'Boolean'");
@@ -310,10 +351,13 @@ expr1:
                         } else { /* If the divider is not 0, divide*/
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = $1.fval / $3.fval;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s DIVF %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         }
                     }
   | expr1 MOD expr2 { 
-                        cast_vals_to_flt(&$1, &$3); /* floats are used to look for a divider == 0 */
+                        cast_vals_to_flt(&$1, &$3, true); /* floats are used to look for a divider == 0 */
                         /* Booleans and Strings cannot use the modulo operator */
                         if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                             custom_err_mssg("Modulo (%%) operator cannot be applied to type 'Boolean'");
@@ -323,10 +367,16 @@ expr1:
                             custom_err_mssg("Modulo by zero");  /* If the divider is 0, error*/
                         else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float modulo */
                             $$.val_type = FLOAT_TYPE; 
-                            $$.fval = fmod($1.fval,$3.fval); 
+                            $$.fval = fmod($1.fval,$3.fval);
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s MODF %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer division */
                             $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival % $3.ival; 
+                            $$.ival = $1.ival % $3.ival;
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s MODI %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         }
                     }
   | expr1 ORR expr2 { /* Only booleans can use the or operator */
@@ -347,12 +397,18 @@ expr2:
                         else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                             custom_err_mssg("Power (**) operator cannot be applied to type 'String'");
                         else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float power */
-                            cast_vals_to_flt(&$1, &$3); 
+                            cast_vals_to_flt(&$1, &$3, true); 
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = pow($1.fval,$3.fval);
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s POWF %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer power */
                             $$.val_type = INT_TYPE; 
                             $$.ival = pow($1.ival,$3.ival); }
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %s POWI %s", $$.temp, $1.temp, $3.temp);
+                            c3a(c3a_mssg);
                     }
   | expr2 AND expr3 { /* Only booleans can use the or operator */
                         if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
@@ -372,7 +428,7 @@ expr3:
                     else if ($2.val_type == STRING_TYPE) 
                         custom_err_mssg("sin() cannot take a type 'String' as a parameter");
                     else {
-                        cast_vals_to_flt(&$2, NULL); /* Cast the values to float for easier validations */
+                        cast_vals_to_flt(&$2, NULL, true); /* Cast the values to float for easier validations */
                         $$.val_type = FLOAT_TYPE; 
                         if(sin($2.fval) < 0.000001 && sin($2.fval) > -0.000001) $$.fval = 0;  /* Values really close to 0 get treated as 0 */
                         else $$.fval = sin($2.fval);  /* calculate sin(x) */
@@ -385,7 +441,7 @@ expr3:
                     else if ($2.val_type == STRING_TYPE) 
                         custom_err_mssg("cos() cannot take a type 'String' as a parameter");
                     else {
-                        cast_vals_to_flt(&$2, NULL); /* Cast the values to float for easier validations */
+                        cast_vals_to_flt(&$2, NULL, true); /* Cast the values to float for easier validations */
                         $$.val_type = FLOAT_TYPE; 
                         if(cos($2.fval) < 0.000001 && cos($2.fval) > -0.000001) $$.fval = 0;  /* Values really close to 0 get treated as 0 */
                         else $$.fval = cos($2.fval);  /* calculate cos(x) */
@@ -398,7 +454,7 @@ expr3:
                     else if ($2.val_type == STRING_TYPE) 
                         custom_err_mssg("tan() cannot take a type 'String' as a parameter");
                     else {
-                        cast_vals_to_flt(&$2, NULL);  /* Cast the values to float for easier validations */
+                        cast_vals_to_flt(&$2, NULL, true);  /* Cast the values to float for easier validations */
                         if(cos($2.fval) < 0.000001) 
                             custom_err_mssg("Indefinition error");  /* tan(x) == sin(x)/cos(x) so if cos(x) == 0, we would be dividing by 0 */
                         else { 
@@ -461,7 +517,7 @@ expr4:
                                     custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Higher (>) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3); 
+                                cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval > $3.fval;
                             }
@@ -470,7 +526,7 @@ expr4:
                                     custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3); 
+                                cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval >= $3.fval;
                             }
@@ -479,7 +535,7 @@ expr4:
                                     custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Lower (<) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3); 
+                                cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval < $3.fval;
                             }
@@ -488,7 +544,7 @@ expr4:
                                     custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3); 
+                                cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval <= $3.fval;
                             }
@@ -497,7 +553,7 @@ expr4:
                                     custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Equal (==) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3); 
+                                cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval == $3.fval;
                             }
@@ -506,7 +562,7 @@ expr4:
                                     custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3); 
+                                cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval != $3.fval;
                             }
@@ -517,10 +573,12 @@ expr_term:
         INT     {
                     $$.val_type = INT_TYPE; 
                     $$.ival = $1; 
+                    sprintf($$.temp, "%d", $1);
                 }
     | FLOAT     {
                     $$.val_type = FLOAT_TYPE; 
-                    $$.fval = $1; 
+                    $$.fval = $1;
+                    sprintf($$.temp, "%g", $1);
                 }
     | BOOL      {
                     $$.val_type = BOOL_TYPE; 
@@ -542,8 +600,8 @@ expr_term:
                     int result = sym_lookup($1.name, &$1);
                     if(result == 0) {
                         $$.val_type = $1.id_val.val_type;
-                        if($1.id_val.val_type == INT_TYPE) $$.ival = $1.id_val.ival;
-                        else if($1.id_val.val_type == FLOAT_TYPE) $$.fval = $1.id_val.fval;
+                        if($1.id_val.val_type == INT_TYPE) { $$.ival = $1.id_val.ival; sprintf($$.temp, "%s", $1.name); }
+                        else if($1.id_val.val_type == FLOAT_TYPE) { $$.fval = $1.id_val.fval; sprintf($$.temp, "%s", $1.name); }
                         else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
                         else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
                     }
@@ -566,6 +624,33 @@ expr_term:
 ;
 %%
 
+void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac) {
+    if (op1 != NULL) {
+        if (op1->val_type == INT_TYPE) {
+            op1->fval = (float)op1->ival;
+            if (store3ac) {
+                char temp[16];
+                sprintf(temp, "$t%03d", c3aOpCount++);
+                sprintf(c3a_mssg, "%s := I2F %s", temp, op1->temp);
+                sprintf(op1->temp, "%s", temp);
+                c3a(c3a_mssg);
+            }
+        }
+    }
+    if (op2 != NULL) {
+        if (op2->val_type == INT_TYPE) {
+            op2->fval = (float)op2->ival;
+            if (store3ac) {
+                char temp[16];
+                sprintf(temp, "$t%03d", c3aOpCount++);
+                sprintf(c3a_mssg, "%s := I2F %s", temp, op2->temp);
+                sprintf(op2->temp, "%s", temp);
+                c3a(c3a_mssg);
+            }
+        }
+    }
+}
+
 void custom_err_mssg(const char *s) {
     err = true;
     if (error_log == NULL) {
@@ -579,6 +664,19 @@ void custom_err_mssg(const char *s) {
     fprintf(error_log, "%s\n", input);
     fprintf(error_log, "Error at line %d: %s\n", yylineno, s);
     fflush(error_log);
+}
+
+void c3a(const char *s) {
+    if (out3ac == NULL) {
+        out3ac = fopen("intermediate/c3a.txt", "w");
+        if (!out3ac) {
+            fprintf(stderr, "Error: Could not open c3a.txt for writing.\n");
+            return;
+        }
+    }
+    c3aLineNo++;
+    fprintf(out3ac, "%d: %s\n", c3aLineNo, s);
+    fflush(out3ac);
 }
 
 int yywrap() {

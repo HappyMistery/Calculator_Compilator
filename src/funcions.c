@@ -9,6 +9,8 @@ extern FILE *yyin;
 extern FILE *yyout;
 extern int yylineno;
 
+FILE *out3ac;
+
 
 int init_analisi_lexica(char *filename)
 {
@@ -58,9 +60,9 @@ int end_analisi_sintactica(void)
   } else {
     error = EXIT_FAILURE;
   }
+
   return error;
 }
-
 
 int analisi_semantica(void)
 {
@@ -78,19 +80,6 @@ int analisi_semantica(void)
 void yyerror(char *explanation)
 {
   fprintf(stderr, "Error: %s , in line %d\n", explanation, yylineno);
-}
-
-void cast_vals_to_flt(value_info *op1, value_info *op2) {
-    if(op2 == NULL) {
-        if (op1->val_type == INT_TYPE) 
-            op1->fval = (float)op1->ival;
-    }
-    else {
-        if (op1->val_type == INT_TYPE) 
-            op1->fval = (float)op1->ival;
-        if (op2->val_type == INT_TYPE) 
-            op2->fval = (float)op2->ival;
-    }
 }
 
 char* decToBin(int n) {

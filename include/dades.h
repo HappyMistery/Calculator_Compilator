@@ -26,6 +26,7 @@ typedef struct {
     float fval;
     char* sval;
     int bval;
+    char temp[16];
 } value_info;
 
 typedef struct {
