@@ -66,6 +66,10 @@ BASE b2|b8|b10|b16
 
 "showVars()"    { append_to_buffer(yytext); return SHVAR; }
 
+"repeat"    { append_to_buffer(yytext); return REP; }
+"do"        { append_to_buffer(yytext); return DO; }
+"done"      { append_to_buffer(yytext); return DONE; }
+
 {BASE}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return BASE; }
 
 

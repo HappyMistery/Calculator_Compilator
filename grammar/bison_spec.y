@@ -68,6 +68,7 @@
                       LEN SUBSTR
                       OP CP
                       SHVAR
+                      REP DO DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
@@ -221,17 +222,21 @@ expr:
   | ADD expr1   { /* Can only use Unary Plus Operator (+) with a number */
                     if ($2.val_type == INT_TYPE) { 
                         $$.val_type = INT_TYPE; 
-                        $$.ival = +$2.ival;
-                        sprintf($$.temp, "$t%03d", c3aOpCount++);
-                        sprintf(c3a_mssg, "%s := CHSI %s", $$.temp, $2.temp);
-                        c3a(c3a_mssg);
+                        $$.ival = abs($2.ival);
+                        if ($$.ival > $2.ival) {
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := CHSI %s", $$.temp, $2.temp);
+                            c3a(c3a_mssg);
+                        } else sprintf($$.temp, "%s", $2.temp);
                     }
                     else if ($2.val_type == FLOAT_TYPE) { 
                         $$.val_type = FLOAT_TYPE; 
-                        $$.fval = +$2.fval;
-                        sprintf($$.temp, "$t%03d", c3aOpCount++);
-                        sprintf(c3a_mssg, "%s := CHSF %s", $$.temp, $2.temp);
-                        c3a(c3a_mssg);
+                        $$.fval = fabs($2.fval);
+                        if ($$.ival > $2.fval) {
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := CHSF %s", $$.temp, $2.temp);
+                            c3a(c3a_mssg);
+                        } else sprintf($$.temp, "%s", $2.temp);
                     }
                     else { 
                         to_str = type_to_str($2.val_type);
