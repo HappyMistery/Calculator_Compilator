@@ -38,6 +38,11 @@
   int var_index = 0;
   int c3aLineNo = 0;
   int c3aOpCount = 1;
+  int loopLine = 0;
+  char loopTemp[16];
+  char loopCondTemp[16];
+  bool isLoopTarget = false;
+  bool inLoop = false;
 %}
 %define parse.error verbose
 %locations
@@ -77,13 +82,49 @@
 %%
 
 calculator:
-    stmnt_list
+    stmnt_list  { c3a("HALT"); }
 ;
 
 stmnt_list:
         stmnt ENDLINE stmnt_list
+    |   loop ENDLINE stmnt_list
+    |   loop stmnt_list
     |   ENDLINE stmnt_list
-    |   /* empty */               { /* Allow empty input */ }
+    |   /* empty */     { /* Allow empty input */ }
+;
+
+loop:
+        REP         {
+                        isLoopTarget = true;
+                        inLoop = true;
+                    }
+    |   stmnt DO    {
+                        if (inLoop && ($1.val_type == INT_TYPE || $1.val_type == FLOAT_TYPE)) {
+                            sprintf(loopTemp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", loopTemp, 0);
+                            c3a(c3a_mssg);
+                            loopLine = c3aLineNo + 1;
+                            sprintf(loopCondTemp, "%s", $1.temp);
+                            isLoopTarget = false;
+                        } else {
+                            sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                    }
+    |   DONE        {   
+                        if (inLoop) {
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1);
+                            c3a(c3a_mssg);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
+                            c3a(c3a_mssg);
+                            inLoop = false;
+                        } else {
+                            sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                    }
 ;
 
 stmnt:
@@ -91,13 +132,13 @@ stmnt:
                             if(!err) {
                                 $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                                 to_str = type_to_str($1.id_val.val_type);
-                                if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
+                                if ($3.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
                                     fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
                                     sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
                                     c3a(c3a_mssg);
                                     $1.id_val.ival = $3.ival;
                                 }
-                                else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
+                                else if ($3.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
                                     fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
                                     sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
                                     c3a(c3a_mssg);
@@ -115,7 +156,6 @@ stmnt:
                                 vars[var_index] = $1.name;
                                 var_index++;
                                 free(to_str);
-                                c3aOpCount = 1;
                             } 
                             err = false;
                         }
@@ -149,12 +189,22 @@ stmnt:
                         if ($$.val_type == INT_TYPE) { 
                             $$.val_type = INT_TYPE; 
                             $$.ival = $1.ival; 
-                            fprintf(yyout, "[Integer] %d\n", $1.ival); 
+                            if (!isLoopTarget) {
+                                fprintf(yyout, "[Integer] %d\n", $1.ival);
+                                sprintf(c3a_mssg, "PARAM %s", $$.temp);
+                                c3a(c3a_mssg);
+                                c3a("CALL PUTI, 1");
+                            }
                         }
                         else if ($$.val_type == FLOAT_TYPE) { 
                             $$.val_type = FLOAT_TYPE; 
                             $$.ival = $1.fval; 
-                            fprintf(yyout, "[Float] %g\n", $1.fval); 
+                            if (!isLoopTarget) {
+                                fprintf(yyout, "[Float] %g\n", $1.fval);
+                                sprintf(c3a_mssg, "PARAM %s", $$.temp);
+                                c3a(c3a_mssg);
+                                c3a("CALL PUTF, 1");
+                            }
                         }
                         else if ($$.val_type == BOOL_TYPE) { 
                             $$.val_type = BOOL_TYPE; 
@@ -193,7 +243,6 @@ stmnt:
     |   SHVAR       { 
                         buildTable(vars, var_index);
                     }
-
 ;
 
 expr:
