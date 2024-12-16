@@ -5,5 +5,5 @@ bison_spec.tab.*
 lex.*
 output.txt
 /.vscode/
-intermediate/c3a.txt
+intermediate/*
 logs/*

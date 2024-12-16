@@ -1,6 +1,8 @@
 #ifndef EXEMPLE_DADES_H
 #define EXEMPLE_DADES_H
 
+#include <stdbool.h>
+
 
 #define STR_MAX_LENGTH 200
 
@@ -35,6 +37,7 @@ typedef struct {
     int line;
     value_info id_val;
     base base;
+    bool isArray;
 } id;
 
 

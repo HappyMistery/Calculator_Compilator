@@ -71,7 +71,7 @@
                       HIG HEQ LOW LEQ EQU NEQ 
                       NOT AND ORR
                       LEN SUBSTR
-                      OP CP
+                      OP CP OB CB
                       SHVAR
                       REP DO DONE
 
@@ -94,72 +94,72 @@ stmnt_list:
 ;
 
 loop:
-        REP         {
-                        isLoopTarget = true;
-                        inLoop = true;
+    REP {
+            isLoopTarget = true;
+            inLoop = true;
+        }
+    | stmnt DO  {
+                    if (inLoop && ($1.val_type == INT_TYPE || $1.val_type == FLOAT_TYPE)) {
+                        sprintf(loopTemp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := %d", loopTemp, 0);
+                        c3a(c3a_mssg);
+                        loopLine = c3aLineNo + 1;
+                        sprintf(loopCondTemp, "%s", $1.temp);
+                        isLoopTarget = false;
+                    } else {
+                        sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
+                        free(to_str);
+                        custom_err_mssg(err_mssg);
                     }
-    |   stmnt DO    {
-                        if (inLoop && ($1.val_type == INT_TYPE || $1.val_type == FLOAT_TYPE)) {
-                            sprintf(loopTemp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %d", loopTemp, 0);
-                            c3a(c3a_mssg);
-                            loopLine = c3aLineNo + 1;
-                            sprintf(loopCondTemp, "%s", $1.temp);
-                            isLoopTarget = false;
-                        } else {
-                            sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
-                            free(to_str);
-                            custom_err_mssg(err_mssg);
-                        }
-                    }
-    |   DONE        {   
-                        if (inLoop) {
-                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1);
-                            c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
-                            c3a(c3a_mssg);
-                            inLoop = false;
-                        } else {
-                            sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
-                            free(to_str);
-                            custom_err_mssg(err_mssg);
-                        }
-                    }
+                }
+    | DONE  {   
+                if (inLoop) {
+                    sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1);
+                    c3a(c3a_mssg);
+                    sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
+                    c3a(c3a_mssg);
+                    inLoop = false;
+                } else {
+                    sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
+                    free(to_str);
+                    custom_err_mssg(err_mssg);
+                }
+            }
 ;
 
 stmnt:
-        ID ASSIGN expr  {
-                            if(!err) {
-                                $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
-                                to_str = type_to_str($1.id_val.val_type);
-                                if ($3.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
-                                    fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
-                                    sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
-                                    c3a(c3a_mssg);
-                                    $1.id_val.ival = $3.ival;
-                                }
-                                else if ($3.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
-                                    fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
-                                    sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
-                                    c3a(c3a_mssg);
-                                    $1.id_val.fval = $3.fval;
-                                }
-                                else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
-                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($3.bval == 1) ? "true" : "false");
-                                    $1.id_val.bval = $3.bval;
-                                }
-                                else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
-                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $3.sval);
-                                    $1.id_val.sval = $3.sval;
-                                }
-                                sym_enter($1.name, &$1);
-                                vars[var_index] = $1.name;
-                                var_index++;
-                                free(to_str);
-                            } 
-                            err = false;
-                        }
-    |   ID ASSIGN expr BASE {   
+    ID ASSIGN expr  {
+                        if(!err) {
+                            $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
+                            to_str = type_to_str($1.id_val.val_type);
+                            if ($3.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
+                                fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
+                                sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
+                                c3a(c3a_mssg);
+                                $1.id_val.ival = $3.ival;
+                            }
+                            else if ($3.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
+                                fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
+                                sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
+                                c3a(c3a_mssg);
+                                $1.id_val.fval = $3.fval;
+                            }
+                            else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
+                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($3.bval == 1) ? "true" : "false");
+                                $1.id_val.bval = $3.bval;
+                            }
+                            else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
+                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $3.sval);
+                                $1.id_val.sval = $3.sval;
+                            }
+                            sym_enter($1.name, &$1);
+                            vars[var_index] = $1.name;
+                            var_index++;
+                            free(to_str);
+                        } 
+                        err = false;
+                    }
+    | ID ASSIGN expr BASE   {   
                                 if(!err) {
                                     if ($3.val_type != INT_TYPE) {
                                         to_str = type_to_str($3.val_type);
@@ -184,7 +184,7 @@ stmnt:
                                 } 
                                 err = false;
                             }
-    |   expr    {
+    | expr      {
                     if(!err) {
                         if ($$.val_type == INT_TYPE) { 
                             $$.val_type = INT_TYPE; 
@@ -219,30 +219,30 @@ stmnt:
                     } 
                     err = false;
                 }
-    |   expr BASE   {
-                        if(!err) {
-                            to_str = type_to_str($1.val_type);
-                            if ($$.val_type != INT_TYPE) {
-                                sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $2, to_str);
-                                free(to_str);
-                                custom_err_mssg(err_mssg);
-                            }
-                            else {
-                                base base;
-                                if (strcmp($2, "b2") == 0) base = BIN_BASE;
-                                else if (strcmp($2, "b8") == 0) base = OCT_BASE;
-                                else if (strcmp($2, "b10") == 0) base = DEC_BASE;
-                                else if (strcmp($2, "b16") == 0) base = HEX_BASE;
-                                $$.val_type = INT_TYPE; 
-                                $$.ival = $1.ival;
-                                fprintf(yyout, "[Integer] %s\n", switch_bases(&$1, base));
-                            }
-                        } 
-                        err = false;
-                    }
-    |   SHVAR       { 
-                        buildTable(vars, var_index);
-                    }
+    | expr BASE {
+                    if(!err) {
+                        to_str = type_to_str($1.val_type);
+                        if ($$.val_type != INT_TYPE) {
+                            sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $2, to_str);
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                        else {
+                            base base;
+                            if (strcmp($2, "b2") == 0) base = BIN_BASE;
+                            else if (strcmp($2, "b8") == 0) base = OCT_BASE;
+                            else if (strcmp($2, "b10") == 0) base = DEC_BASE;
+                            else if (strcmp($2, "b16") == 0) base = HEX_BASE;
+                            $$.val_type = INT_TYPE; 
+                            $$.ival = $1.ival;
+                            fprintf(yyout, "[Integer] %s\n", switch_bases(&$1, base));
+                        }
+                    } 
+                    err = false;
+                }
+    | SHVAR { 
+                buildTable(vars, var_index);
+            }
 ;
 
 expr:
@@ -268,7 +268,7 @@ expr:
                         custom_err_mssg(err_mssg); 
                     }
                 }
-  | ADD expr1   { /* Can only use Unary Plus Operator (+) with a number */
+    | ADD expr1 { /* Can only use Unary Plus Operator (+) with a number */
                     if ($2.val_type == INT_TYPE) { 
                         $$.val_type = INT_TYPE; 
                         $$.ival = abs($2.ival);
@@ -294,81 +294,81 @@ expr:
                         custom_err_mssg(err_mssg); 
                     }
                 }
-  | expr ADD expr1  { /* If any one of the operands is a string, concatenate */
-                        if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
-                            char str1[255];
-                            char* str;
-                            cast_vals_to_flt(&$1, &$3, false);
-                            $$.val_type = STRING_TYPE;
-                            if ($1.val_type == STRING_TYPE) { /* If 1st operand is a string, then 2nd is any other type */
-                                if ($3.val_type == STRING_TYPE) {  /* If both operands are a string, concatenate them */
-                                    str = malloc(strlen($1.sval) + strlen($3.sval) + 1);  /* allocate enough memory for 2 strings */
-                                    strcpy(str, $1.sval);
-                                    $$.sval = strcat(str, $3.sval);
+    | expr ADD expr1    { /* If any one of the operands is a string, concatenate */
+                            if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) {
+                                char str1[255];
+                                char* str;
+                                cast_vals_to_flt(&$1, &$3, false);
+                                $$.val_type = STRING_TYPE;
+                                if ($1.val_type == STRING_TYPE) { /* If 1st operand is a string, then 2nd is any other type */
+                                    if ($3.val_type == STRING_TYPE) {  /* If both operands are a string, concatenate them */
+                                        str = malloc(strlen($1.sval) + strlen($3.sval) + 1);  /* allocate enough memory for 2 strings */
+                                        strcpy(str, $1.sval);
+                                        $$.sval = strcat(str, $3.sval);
+                                    }
+                                    else if ($3.val_type == BOOL_TYPE) {
+                                        str = malloc(strlen($1.sval) + strlen("false") + 1);  /* allocate enough memory for a string and the word 'false' at most */
+                                        strcpy(str, $1.sval);
+                                        $$.sval = strcat(str, ($3.bval == 1) ? "true" : "false"); /* Can concatenate booleans */
+                                    }
+                                    else {  /* If it's not a boolean, concatenate a number */
+                                        str = malloc(strlen($1.sval) + sizeof(char) * 32 + 1);  /* allocate enough memory for a string and a 32 bit number */
+                                        strcpy(str, $1.sval);
+                                        sprintf(str1, "%g", $3.fval);
+                                        $$.sval = strcat(str, str1);
+                                    }
                                 }
-                                else if ($3.val_type == BOOL_TYPE) {
-                                    str = malloc(strlen($1.sval) + strlen("false") + 1);  /* allocate enough memory for a string and the word 'false' at most */
-                                    strcpy(str, $1.sval);
-                                    $$.sval = strcat(str, ($3.bval == 1) ? "true" : "false"); /* Can concatenate booleans */
+                                else {  /* If 2nd operand is a string, then 1st is any other type */
+                                    if ($1.val_type == BOOL_TYPE) { /* Can concatenate booleans */
+                                        str = malloc(strlen($3.sval) + strlen("false") + 1);  /* allocate enough memory for a string and the word 'false' at most */
+                                        strcpy(str, ($1.bval == 1) ? "true" : "false");
+                                        $$.sval = strcat(str, $3.sval);
+                                    } 
+                                    else {  /* If it's not a boolean, concatenate a number */
+                                        str = malloc(strlen($3.sval) + sizeof(char) * 32 + 1);  /* allocate enough memory for a string and a 32 bit number */
+                                        sprintf(str, "%g", $1.fval); 
+                                        $$.sval = strcat(str, $3.sval);
+                                    }
                                 }
-                                else {  /* If it's not a boolean, concatenate a number */
-                                    str = malloc(strlen($1.sval) + sizeof(char) * 32 + 1);  /* allocate enough memory for a string and a 32 bit number */
-                                    strcpy(str, $1.sval);
-                                    sprintf(str1, "%g", $3.fval);
-                                    $$.sval = strcat(str, str1);
-                                }
+                            } /* If none one of the operands is a string, a boolean cannot use the addition operator */
+                            else if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                custom_err_mssg("Addition (+) operator cannot be applied to type 'Boolean'");
+                            else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float addition */
+                                cast_vals_to_flt(&$1, &$3, true);
+                                $$.val_type = FLOAT_TYPE; 
+                                $$.fval = $1.fval + $3.fval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s ADDF %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
+                            } else { /* If both operands are integers, do an Integer addition */
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $1.ival + $3.ival;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s ADDI %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             }
-                            else {  /* If 2nd operand is a string, then 1st is any other type */
-                                if ($1.val_type == BOOL_TYPE) { /* Can concatenate booleans */
-                                    str = malloc(strlen($3.sval) + strlen("false") + 1);  /* allocate enough memory for a string and the word 'false' at most */
-                                    strcpy(str, ($1.bval == 1) ? "true" : "false");
-                                    $$.sval = strcat(str, $3.sval);
-                                } 
-                                else {  /* If it's not a boolean, concatenate a number */
-                                    str = malloc(strlen($3.sval) + sizeof(char) * 32 + 1);  /* allocate enough memory for a string and a 32 bit number */
-                                    sprintf(str, "%g", $1.fval); 
-                                    $$.sval = strcat(str, $3.sval);
-                                }
+                        }
+    | expr SUB expr1    { /* Booleans and Strings cannot use the subtraction operator */
+                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                custom_err_mssg("Subtraction (-) operator cannot be applied to type 'Boolean'");
+                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                custom_err_mssg("Subtraction (-) operator cannot be applied to type 'String'");
+                            else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {  /* If some operand is a Float, do a Float subtraction */
+                                cast_vals_to_flt(&$1, &$3, true); 
+                                $$.val_type = FLOAT_TYPE; 
+                                $$.fval = $1.fval - $3.fval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s SUBF %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
+                            } else { /* If both operands are integers, do an Integer subtraction */
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $1.ival - $3.ival;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s SUBI %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             }
-                        } /* If none one of the operands is a string, a boolean cannot use the addition operator */
-                        else if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                            custom_err_mssg("Addition (+) operator cannot be applied to type 'Boolean'");
-                        else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float addition */
-                            cast_vals_to_flt(&$1, &$3, true);
-                            $$.val_type = FLOAT_TYPE; 
-                            $$.fval = $1.fval + $3.fval;
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s ADDF %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
-                        } else { /* If both operands are integers, do an Integer addition */
-                            $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival + $3.ival;
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s ADDI %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
                         }
-                    }
-  | expr SUB expr1  { /* Booleans and Strings cannot use the subtraction operator */
-                        if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                            custom_err_mssg("Subtraction (-) operator cannot be applied to type 'Boolean'");
-                        else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                            custom_err_mssg("Subtraction (-) operator cannot be applied to type 'String'");
-                        else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {  /* If some operand is a Float, do a Float subtraction */
-                            cast_vals_to_flt(&$1, &$3, true); 
-                            $$.val_type = FLOAT_TYPE; 
-                            $$.fval = $1.fval - $3.fval;
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s SUBF %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
-                        } else { /* If both operands are integers, do an Integer subtraction */
-                            $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival - $3.ival;
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s SUBI %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
-                        }
-                    }
-  | expr1
+    | expr1
 ;
 
 
@@ -393,55 +393,55 @@ expr1:
                             c3a(c3a_mssg);
                         }
                     }
-  | expr1 DIV expr2 { 
-                        cast_vals_to_flt(&$1, &$3, true); /* floats are used for the operation in order to get a float result */
-                        /* Booleans and Strings cannot use the division operator */
-                        if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                            custom_err_mssg("Division (/) operator cannot be applied to type 'Boolean'");
-                        else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                            custom_err_mssg("Division (/) operator cannot be applied to type 'String'");
-                        else if ($3.ival == 0) {
-                            custom_err_mssg("Division by zero"); /* If the divider is 0, error*/
-                        } else { /* If the divider is not 0, divide*/
-                            $$.val_type = FLOAT_TYPE; 
-                            $$.fval = $1.fval / $3.fval;
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s DIVF %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
+    | expr1 DIV expr2   { 
+                            cast_vals_to_flt(&$1, &$3, true); /* floats are used for the operation in order to get a float result */
+                            /* Booleans and Strings cannot use the division operator */
+                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                custom_err_mssg("Division (/) operator cannot be applied to type 'Boolean'");
+                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                custom_err_mssg("Division (/) operator cannot be applied to type 'String'");
+                            else if ($3.ival == 0) {
+                                custom_err_mssg("Division by zero"); /* If the divider is 0, error*/
+                            } else { /* If the divider is not 0, divide*/
+                                $$.val_type = FLOAT_TYPE; 
+                                $$.fval = $1.fval / $3.fval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s DIVF %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
+                            }
                         }
-                    }
-  | expr1 MOD expr2 { 
-                        cast_vals_to_flt(&$1, &$3, true); /* floats are used to look for a divider == 0 */
-                        /* Booleans and Strings cannot use the modulo operator */
-                        if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                            custom_err_mssg("Modulo (%%) operator cannot be applied to type 'Boolean'");
-                        else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                            custom_err_mssg("Modulo (%%) operator cannot be applied to type 'String'");
-                        else if (($3.fval < 0.000001 && $3.fval > -0.000001)) 
-                            custom_err_mssg("Modulo by zero");  /* If the divider is 0, error*/
-                        else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float modulo */
-                            $$.val_type = FLOAT_TYPE; 
-                            $$.fval = fmod($1.fval,$3.fval);
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s MODF %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
-                        } else { /* If both operands are integers, do an Integer division */
-                            $$.val_type = INT_TYPE; 
-                            $$.ival = $1.ival % $3.ival;
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s MODI %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
+    | expr1 MOD expr2   { 
+                            cast_vals_to_flt(&$1, &$3, true); /* floats are used to look for a divider == 0 */
+                            /* Booleans and Strings cannot use the modulo operator */
+                            if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
+                                custom_err_mssg("Modulo (%%) operator cannot be applied to type 'Boolean'");
+                            else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
+                                custom_err_mssg("Modulo (%%) operator cannot be applied to type 'String'");
+                            else if (($3.fval < 0.000001 && $3.fval > -0.000001)) 
+                                custom_err_mssg("Modulo by zero");  /* If the divider is 0, error*/
+                            else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float modulo */
+                                $$.val_type = FLOAT_TYPE; 
+                                $$.fval = fmod($1.fval,$3.fval);
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s MODF %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
+                            } else { /* If both operands are integers, do an Integer division */
+                                $$.val_type = INT_TYPE; 
+                                $$.ival = $1.ival % $3.ival;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s MODI %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
+                            }
                         }
-                    }
-  | expr1 ORR expr2 { /* Only booleans can use the or operator */
-                        if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
-                            custom_err_mssg("Or (or) operator can only be applied to type 'Boolean'");
-                        else {
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.bval || $3.bval;
+    | expr1 ORR expr2   { /* Only booleans can use the or operator */
+                            if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
+                                custom_err_mssg("Or (or) operator can only be applied to type 'Boolean'");
+                            else {
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.bval || $3.bval;
+                            }
                         }
-                    }
-  | expr2
+    | expr2
 ;
 
 expr2:
@@ -464,15 +464,15 @@ expr2:
                             sprintf(c3a_mssg, "%s := %s POWI %s", $$.temp, $1.temp, $3.temp);
                             c3a(c3a_mssg);
                     }
-  | expr2 AND expr3 { /* Only booleans can use the or operator */
-                        if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
-                            custom_err_mssg("And (and) operator can only be applied to type 'Boolean'");
-                        else { 
-                            $$.val_type = BOOL_TYPE; 
-                            $$.bval = $1.bval && $3.bval; 
+    | expr2 AND expr3   { /* Only booleans can use the or operator */
+                            if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
+                                custom_err_mssg("And (and) operator can only be applied to type 'Boolean'");
+                            else { 
+                                $$.val_type = BOOL_TYPE; 
+                                $$.bval = $1.bval && $3.bval; 
+                            }
                         }
-                    }
-  | expr3
+    | expr3
 ;
 
 expr3:
@@ -488,7 +488,7 @@ expr3:
                         else $$.fval = sin($2.fval);  /* calculate sin(x) */
                     }
                 }
-  | COS expr4   { 
+    | COS expr4 { 
                     /* Booleans and Strings cannot be used in trigonometric expressions */
                     if ($2.val_type == BOOL_TYPE) 
                         custom_err_mssg("cos() cannot take a type 'Boolean' as a parameter");
@@ -501,7 +501,7 @@ expr3:
                         else $$.fval = cos($2.fval);  /* calculate cos(x) */
                     }
                 }
-  | TAN expr4   { 
+    | TAN expr4 { 
                     /* Booleans and Strings cannot be used in trigonometric expressions */
                     if ($2.val_type == BOOL_TYPE) 
                         custom_err_mssg("tan() cannot take a type 'Boolean' as a parameter");
@@ -517,7 +517,7 @@ expr3:
                         }
                     }
                 }
-  | NOT expr4   { /* Only booleans can use the or operator */
+    | NOT expr4 { /* Only booleans can use the or operator */
                     if ($2.val_type != BOOL_TYPE) 
                         custom_err_mssg("Not (not) operator can only be applied to type 'Boolean'");
                     else { 
@@ -525,7 +525,7 @@ expr3:
                         $$.bval = !$2.bval; 
                     }
                 }
-  | expr4
+    | expr4
 ;
 
 expr4:
@@ -620,50 +620,50 @@ expr4:
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval != $3.fval;
                             }
-  | expr_term
+    | expr_term
 ;
 
 expr_term:
-        INT     {
-                    $$.val_type = INT_TYPE; 
-                    $$.ival = $1; 
-                    sprintf($$.temp, "%d", $1);
-                }
-    | FLOAT     {
-                    $$.val_type = FLOAT_TYPE; 
-                    $$.fval = $1;
-                    sprintf($$.temp, "%g", $1);
-                }
-    | BOOL      {
-                    $$.val_type = BOOL_TYPE; 
-                    $$.bval = $1; 
-                }      
+    INT     {
+                $$.val_type = INT_TYPE; 
+                $$.ival = $1; 
+                sprintf($$.temp, "%d", $1);
+            }
+    | FLOAT {
+                $$.val_type = FLOAT_TYPE; 
+                $$.fval = $1;
+                sprintf($$.temp, "%g", $1);
+            }
+    | BOOL  {
+                $$.val_type = BOOL_TYPE; 
+                $$.bval = $1; 
+            }      
     | STRING    {
                     $$.val_type = STRING_TYPE; 
                     $$.sval = $1;
                 }
-    | PI        {  
-                    $$.val_type = FLOAT_TYPE; 
-                    $$.fval = PI_CONST; 
+    | PI    {  
+                $$.val_type = FLOAT_TYPE; 
+                $$.fval = PI_CONST; 
+            }
+    | E     {  
+                $$.val_type = FLOAT_TYPE; 
+                $$.fval = E_CONST; 
+            }
+    | ID    {
+                int result = sym_lookup($1.name, &$1);
+                if(result == 0) {
+                    $$.val_type = $1.id_val.val_type;
+                    if($1.id_val.val_type == INT_TYPE) { $$.ival = $1.id_val.ival; sprintf($$.temp, "%s", $1.name); }
+                    else if($1.id_val.val_type == FLOAT_TYPE) { $$.fval = $1.id_val.fval; sprintf($$.temp, "%s", $1.name); }
+                    else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
+                    else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
                 }
-    | E         {  
-                    $$.val_type = FLOAT_TYPE; 
-                    $$.fval = E_CONST; 
+                else {
+                    sprintf(err_mssg, "Variable '%s' does not exist\n", $1.name); 
+                    custom_err_mssg(err_mssg);
                 }
-    | ID        {
-                    int result = sym_lookup($1.name, &$1);
-                    if(result == 0) {
-                        $$.val_type = $1.id_val.val_type;
-                        if($1.id_val.val_type == INT_TYPE) { $$.ival = $1.id_val.ival; sprintf($$.temp, "%s", $1.name); }
-                        else if($1.id_val.val_type == FLOAT_TYPE) { $$.fval = $1.id_val.fval; sprintf($$.temp, "%s", $1.name); }
-                        else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
-                        else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
-                    }
-                    else {
-                        sprintf(err_mssg, "Variable '%s' does not exist\n", $1.name); 
-                        custom_err_mssg(err_mssg);
-                    }
-                }
+            }
     | OP expr CP    { 
                         $$.val_type = $2.val_type;
                         if ($2.val_type == INT_TYPE) 

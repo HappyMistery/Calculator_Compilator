@@ -115,6 +115,9 @@ BASE b2|b8|b10|b16
 "("         { append_to_buffer(yytext); return OP; }
 ")"         { append_to_buffer(yytext); return CP; }
 
+"["         { append_to_buffer(yytext); return OB; }
+"]"         { append_to_buffer(yytext); return CB; }
+
 \n          {   input = strdup(expression_buffer);
                 expression_buffer[0] = '\0';
                 current_column = 1; 
