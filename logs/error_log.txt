@@ -1,2 +1,0 @@
-(null)
-Error at line 1: Structure for a loop is "repeat <arithmetic_expression> do <statement_list> done"

@@ -10,17 +10,18 @@ YACC = bison
 LIB = -lm -lc -lfl
 
 # Paths
-SRC_DIR = src
-INCLUDE_DIR = include
-GRAMMAR_DIR = grammar
-BUILD_DIR = build
 BIN_DIR = bin
+BUILD_DIR = build
 DOCS_DIR = docs
+GRAMMAR_DIR = grammar
+INCLUDE_DIR = include
+INTERMEDIATE_DIR = intermediate
+LOGS_DIR = logs
+SRC_DIR = src
 
 # Lex and Bison files
 SRC_LEX = $(GRAMMAR_DIR)/lex_spec.l
 SRC_YACC = $(GRAMMAR_DIR)/bison_spec.y
-
 LEX_OUT = $(BUILD_DIR)/lex.yy.c
 LEX_H = $(BUILD_DIR)/lex.yy.h
 YACC_OUT_C = $(BUILD_DIR)/bison_spec.tab.c
@@ -34,7 +35,6 @@ SRC = $(SRC_DIR)/main.c
 SRC_INTERACTIVE = $(SRC_DIR)/main_interactive.c
 BIN = $(BIN_DIR)/calc_compiler
 BIN_INTERACTIVE = $(BIN_DIR)/calc_compiler_interactive
-INTERMEDIATE_DIR = intermediate
 
 SRC_EXTRA = $(SRC_DIR)/dades.c $(SRC_DIR)/funcions.c $(SRC_DIR)/result_validator.c $(SRC_DIR)/symtab.c
 
@@ -56,7 +56,7 @@ $(BIN_DIR):
 $(INTERMEDIATE_DIR):
 	mkdir -p $(INTERMEDIATE_DIR)
 
-all: $(BUILD_DIR) $(BIN_DIR) $(INTERMEDIATE_DIR) $(BIN) $(BIN_INTERACTIVE) $(INTERMEDIATE_DIR)/c3a.txt
+all: $(BUILD_DIR) $(BIN_DIR) $(INTERMEDIATE_DIR) $(BIN) $(BIN_INTERACTIVE) $(INTERMEDIATE_DIR)/c3a.txt $(LOGS_DIR)/error_log.txt 
 
 $(BIN): $(OBJ)
 	$(CC) -o $(BIN) $(CFLAGS) $(SRC) $(SRC_EXTRA) $(YACC_OUT_C) $(LEX_OUT) $(LIB)
@@ -85,8 +85,11 @@ $(YACC_OUT): $(SRC_YACC)
 $(INTERMEDIATE_DIR)/c3a.txt: $(INTERMEDIATE_DIR)
 	echo "" > $(INTERMEDIATE_DIR)/c3a.txt
 
+$(LOGS_DIR)/error_log.txt: $(LOGS_DIR)
+	echo "" > $(LOGS_DIR)/error_log.txt
+
 clean:
-	rm -f *~ $(BIN) $(BIN_INTERACTIVE) $(OBJ) $(YACC_OUT) $(YACC_OUTPUT) $(LEX_OUT) $(EG_OUT) $(LEX_H) $(BUILD_DIR)/*.o $(INTERMEDIATE_DIR)/c3a.txt
+	rm -f *~ $(BIN) $(BIN_INTERACTIVE) $(OBJ) $(YACC_OUT) $(YACC_OUTPUT) $(LEX_OUT) $(EG_OUT) $(LEX_H) $(BUILD_DIR)/*.o $(INTERMEDIATE_DIR)/c3a.txt $(LOGS_DIR)/error_log.txt
 
 eg: $(EG_IN)
 	./$(BIN) $(EG_IN) $(EG_OUT)
