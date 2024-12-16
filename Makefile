@@ -56,7 +56,10 @@ $(BIN_DIR):
 $(INTERMEDIATE_DIR):
 	mkdir -p $(INTERMEDIATE_DIR)
 
-all: $(BUILD_DIR) $(BIN_DIR) $(INTERMEDIATE_DIR) $(BIN) $(BIN_INTERACTIVE) $(INTERMEDIATE_DIR)/c3a.txt $(LOGS_DIR)/error_log.txt 
+$(LOGS_DIR):
+	mkdir -p $(LOGS_DIR)
+
+all: $(BUILD_DIR) $(BIN_DIR) $(INTERMEDIATE_DIR) $(LOGS_DIR) $(BIN) $(BIN_INTERACTIVE) $(INTERMEDIATE_DIR)/c3a.txt $(LOGS_DIR)/error_log.txt 
 
 $(BIN): $(OBJ)
 	$(CC) -o $(BIN) $(CFLAGS) $(SRC) $(SRC_EXTRA) $(YACC_OUT_C) $(LEX_OUT) $(LIB)
@@ -83,10 +86,10 @@ $(YACC_OUT): $(SRC_YACC)
 	mv bison_spec.output $(YACC_OUTPUT)
 
 $(INTERMEDIATE_DIR)/c3a.txt: $(INTERMEDIATE_DIR)
-	echo "" > $(INTERMEDIATE_DIR)/c3a.txt
+	touch $(INTERMEDIATE_DIR)/c3a.txt
 
 $(LOGS_DIR)/error_log.txt: $(LOGS_DIR)
-	echo "" > $(LOGS_DIR)/error_log.txt
+	touch $(LOGS_DIR)/error_log.txt
 
 clean:
 	rm -f *~ $(BIN) $(BIN_INTERACTIVE) $(OBJ) $(YACC_OUT) $(YACC_OUTPUT) $(LEX_OUT) $(EG_OUT) $(LEX_H) $(BUILD_DIR)/*.o $(INTERMEDIATE_DIR)/c3a.txt $(LOGS_DIR)/error_log.txt
