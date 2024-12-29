@@ -454,15 +454,28 @@ expr2:
                             cast_vals_to_flt(&$1, &$3, true); 
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = pow($1.fval,$3.fval);
+                            int i;
+                            int flooredVal = floor($3.fval);
+                            for (i = 0; i < flooredVal-1; i++) {
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := $t%03d MULF %g", $$.temp, c3aOpCount - 2, $1.fval);
+                                c3a(c3a_mssg);
+                            }
+                            float floatingExp = $3.fval - flooredVal;
+                            float floatingVal = exp(floatingExp * log($1.fval)); /* Calculate the floating power as a^b = e^(b * ln(a)) */
                             sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s POWF %s", $$.temp, $1.temp, $3.temp);
+                            sprintf(c3a_mssg, "%s := $t%03d MULF %g", $$.temp, c3aOpCount - 2, floatingVal);
                             c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer power */
                             $$.val_type = INT_TYPE; 
-                            $$.ival = pow($1.ival,$3.ival); }
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %s POWI %s", $$.temp, $1.temp, $3.temp);
-                            c3a(c3a_mssg);
+                            $$.ival = pow($1.ival, $3.ival); }
+                            int i;
+                            for (i = 0; i < $3.ival-1; i++) {
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                if (c3aOpCount > 2) sprintf(c3a_mssg, "%s := $t%03d MULI %d", $$.temp, c3aOpCount - 2, $1.ival);
+                                else sprintf(c3a_mssg, "%s := %d MULI %d", $$.temp, $1.ival, $1.ival);
+                                c3a(c3a_mssg);
+                            }
                     }
     | expr2 AND expr3   { /* Only booleans can use the or operator */
                             if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
