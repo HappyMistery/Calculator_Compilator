@@ -451,31 +451,48 @@ expr2:
                         else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                             custom_err_mssg("Power (**) operator cannot be applied to type 'String'");
                         else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) { /* If some operand is a Float, do a Float power */
-                            cast_vals_to_flt(&$1, &$3, true); 
+                            cast_vals_to_flt(&$1, &$3, true);
                             $$.val_type = FLOAT_TYPE; 
-                            $$.fval = pow($1.fval,$3.fval);
-                            int i;
+                            $$.fval = pow($1.fval, $3.fval);
                             int flooredVal = floor($3.fval);
-                            for (i = 0; i < flooredVal-1; i++) {
-                                sprintf($$.temp, "$t%03d", c3aOpCount++);
-                                sprintf(c3a_mssg, "%s := $t%03d MULF %g", $$.temp, c3aOpCount - 2, $1.fval);
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %g", $$.temp, $1.fval); /* Initialize value to multiply over itself */
+                            c3a(c3a_mssg);
+                            sprintf(loopTemp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", loopTemp, 1); /* Start from iteration 1 instead of 0 */
+                            c3a(c3a_mssg);
+                            loopLine = c3aLineNo + 1;
+                            sprintf(loopCondTemp, "%d", flooredVal);
+                            sprintf(c3a_mssg, "%s := %s MULF %g", $$.temp, $$.temp, $1.fval); /* Multiply value over itslef */
+                            c3a(c3a_mssg);
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1); /* Keep iterating */
+                            c3a(c3a_mssg);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
+                            c3a(c3a_mssg);
+                            if ($3.val_type == FLOAT_TYPE) {
+                                float floatingExp = $3.fval - flooredVal;
+                                float floatingVal = exp(floatingExp * log($1.fval)); /* Calculate the floating power as a^b = e^(b * ln(a)) */
+                                sprintf(c3a_mssg, "%s := %s MULF %g", $$.temp, $$.temp, floatingVal);
                                 c3a(c3a_mssg);
                             }
-                            float floatingExp = $3.fval - flooredVal;
-                            float floatingVal = exp(floatingExp * log($1.fval)); /* Calculate the floating power as a^b = e^(b * ln(a)) */
-                            sprintf($$.temp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := $t%03d MULF %g", $$.temp, c3aOpCount - 2, floatingVal);
-                            c3a(c3a_mssg);
                         } else { /* If both operands are integers, do an Integer power */
                             $$.val_type = INT_TYPE; 
-                            $$.ival = pow($1.ival, $3.ival); }
-                            int i;
-                            for (i = 0; i < $3.ival-1; i++) {
-                                sprintf($$.temp, "$t%03d", c3aOpCount++);
-                                if (c3aOpCount > 2) sprintf(c3a_mssg, "%s := $t%03d MULI %d", $$.temp, c3aOpCount - 2, $1.ival);
-                                else sprintf(c3a_mssg, "%s := %d MULI %d", $$.temp, $1.ival, $1.ival);
-                                c3a(c3a_mssg);
-                            }
+                            $$.ival = pow($1.ival, $3.ival); 
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", $$.temp, $1.ival); /* Initialize value to multiply over itself */
+                            c3a(c3a_mssg);
+                            sprintf(loopTemp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", loopTemp, 1); /* Start from iteration 1 instead of 0 */
+                            c3a(c3a_mssg);
+                            loopLine = c3aLineNo + 1;
+                            sprintf(loopCondTemp, "%d", $3.ival);
+                            sprintf(c3a_mssg, "%s := %s MULI %d", $$.temp, $$.temp, $1.ival); /* Multiply value over itslef */
+                            c3a(c3a_mssg);
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1); /* Keep iterating */
+                            c3a(c3a_mssg);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
+                            c3a(c3a_mssg);                        
+                        }
                     }
     | expr2 AND expr3   { /* Only booleans can use the or operator */
                             if ($1.val_type != BOOL_TYPE || $3.val_type != BOOL_TYPE) 
