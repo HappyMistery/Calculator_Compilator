@@ -12,4 +12,9 @@ sin(true)       //sin() cannot take a type 'Boolean' as a parameter
 tan(PI/2)       //Indefinition error
 false b8        //Base conversion (b10 to b8) cannot be applied to type 'Boolean'. Only type 'Integer'
 "testing" b16       //Base conversion (b10 to b16) cannot be applied to type 'String'. Only type 'Integer'
+abc[2] := 4.5 b2    //Base conversion (b10 to b2) cannot be applied to type 'Float'. Only type 'Integer'
 a       //Variable 'a' does not exist
+vector[true] := "something" //Arrays can only be accessed using 'Integer', not 'Boolean'
+arr[5]  //Array element 'arr[5]' does not exist
+xyz[4] := 3.5
+xyz[7] := true  //Array 'xyz[]' cannot be resized to accept element 'xyz[7]'

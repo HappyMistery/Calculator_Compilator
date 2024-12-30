@@ -153,6 +153,11 @@ int validate_results(const char *input_file, const char *output_file) {
         { "d := \"My\"", "[String] d = My"},
         { "e := \"Girlfriend\"", "[String] e = Girlfriend"},
         { "f := c > 5 and b <= 10 OR not a < 2.5", "[Boolean] f = true"},
+        { "arr[12] := 18", "[Integer] arr[12] = 18"},
+        { "arr[2] := d+e", "[String] arr[2] = MyGirlfriend"},
+        { "arr[0] := PI * 45", "[Float] arr[0] = 141.372"},
+        { "arr[b] := b ** E", "[Float] arr[10] = 522.735"},
+        { "arr[1] := f", "[Boolean] arr[1] = true"},
         { "c + b - a", "[Float] 25.1"},
         { "a * b / c", "[Float] 1.96809"},
         { "d + " " + e + \" is cool\"", "[String] My Girlfriend is cool"},
@@ -162,7 +167,7 @@ int validate_results(const char *input_file, const char *output_file) {
         { "d + b + \"--\" + SUBSTR(e 1 2)", "[String] My10--ir"},
         { "substr((d + e) 1 3) + \"--\" + a", "[String] yGi--3.7"},
         { "a + b * (c - 2) / a", "[Float] 49.1054"},
-        { "a > b or f and NOT (c < 10)", "[Boolean] true"},
+        { "a > b or arr[1] and NOT (c < 10)", "[Boolean] true"},
         { "f and b > c or not (a == 3.7)", "[Boolean] false"},
         { "d + \" - \" + e + \": \" + c + a", "[String] My - Girlfriend: 18.83.7"},
         { "SUBSTR((d + e) 1 4) + (c - b)", "[String] yGir8.8"},
@@ -185,7 +190,11 @@ int validate_results(const char *input_file, const char *output_file) {
         {"tan(PI/2)", " Indefinition error"},
         {"false b8", " Base conversion (b10 to b8) cannot be applied to type 'Boolean'. Only type 'Integer'"},
         {"\"testing\" b16", " Base conversion (b10 to b16) cannot be applied to type 'String'. Only type 'Integer'"},
-        {"a", " Variable 'a' does not exist"}
+        {"abc[2] := 4.5 b2", " Base conversion (b10 to b2) cannot be applied to type 'Float'. Only type 'Integer'"},
+        {"a", " Variable 'a' does not exist"},
+        {"vector[true] := \"something\"", " Arrays can only be accessed using 'Integer', not 'Boolean'"},
+        {"arr[5]", " Array element 'arr[5]' does not exist"},
+        {"xyz[7] := true",  " Array 'xyz[]' cannot be resized to accept element 'xyz[7]'"}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {

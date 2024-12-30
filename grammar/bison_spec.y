@@ -808,7 +808,7 @@ expr_term:
                     else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
                 }
                 else {
-                    sprintf(err_mssg, "Variable '%s' does not exist\n", $1.name); 
+                    sprintf(err_mssg, "Variable '%s' does not exist", $1.name); 
                     custom_err_mssg(err_mssg);
                 }
             }
@@ -825,13 +825,13 @@ expr_term:
                                 else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
                             }
                             else {
-                                sprintf(err_mssg, "Array element '%s' does not exist\n", arrayName); 
+                                sprintf(err_mssg, "Array element '%s' does not exist", arrayName); 
                                 custom_err_mssg(err_mssg);
                             }
                         }
                         else {
                             to_str = type_to_str($3.val_type);
-                            sprintf(err_mssg, "Array cannot be accessed using type '%s' for indexing. Only type 'Integer'\n", to_str); 
+                            sprintf(err_mssg, "Array cannot be accessed using type '%s' for indexing. Only type 'Integer'", to_str); 
                             free(to_str);
                             custom_err_mssg(err_mssg);
                         }
