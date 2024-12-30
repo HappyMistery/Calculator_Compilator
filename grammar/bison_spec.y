@@ -23,13 +23,14 @@
 
   int yylex(void);
   void yyerror(const char *s);
+  int contains(char *vars[], int size, const char *value);
   void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac);
   char* switch_bases(value_info *val, base base);
   void custom_err_mssg(const char *s);
   void c3a(const char *s);
   void buildTable(char *vars[], int var_index);
 
-  char err_mssg[150];
+  char err_mssg[256];
   char c3a_mssg[256];
   char temp[256];
   bool err = false;
@@ -163,40 +164,58 @@ stmnt:
                                     if(!err) {
                                         if($3.val_type == INT_TYPE) {
                                             char* name = $1.name;
-                                            int i;
-                                            for (i = 0; i < $3.ival; i++) {
-                                                id idPlaceHolder = $1;
-                                                sprintf(idPlaceHolder.name, "%s[%d]", name, i);
-                                                sym_enter(idPlaceHolder.name, &idPlaceHolder);
-                                                vars[var_index] = idPlaceHolder.name;
-                                                var_index++;
+                                            char arrayName[128];
+                                            sprintf(arrayName, "%s[0]", name);
+                                            int result = contains(vars, var_index+1, arrayName);
+                                            if (result == 0) { /* If there is no array with this name, create placeholders for all of the elements of the array */
+                                                int i;
+                                                for (i = 0; i < $3.ival+1; i++) {
+                                                    char* newLmnName = malloc(128);
+                                                    sprintf(newLmnName, "%s[%d]", name, i);
+                                                    id idPlaceHolder = {newLmnName, {UNKNOWN_TYPE}, NO_BASE};
+                                                    sym_enter(newLmnName, &idPlaceHolder);
+                                                    vars[var_index] = newLmnName;
+                                                    var_index++;
+                                                }
                                             }
-                                            sprintf($1.name, "%s[%d]", $1.name, $3.ival);
-                                            $1.id_val.val_type = $6.val_type;   /* Match the ID type to the assignation's */
-                                            to_str = type_to_str($1.id_val.val_type);
-                                            if ($6.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
-                                                fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $6.ival);
-                                                sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
-                                                c3a(c3a_mssg);
-                                                $1.id_val.ival = $6.ival;
+                                            sprintf(arrayName, "%s[%d]", name, $3.ival);
+                                            int isWithinArrayLength = contains(vars, var_index+1, arrayName);
+                                            if (isWithinArrayLength == 0) { /* If an array with the same name has already been initialized but we are exceeding its max elements, notify */
+                                                sprintf(err_mssg, "Array '%s[]' cannot be resized to accept element '%s[%d]'", name, name, $3.ival);
+                                                custom_err_mssg(err_mssg);
                                             }
-                                            else if ($6.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
-                                                fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $6.fval);
-                                                sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
-                                                c3a(c3a_mssg);
-                                                $1.id_val.fval = $6.fval;
+                                            else { /* If we are trying to modify an existing array's element (within its first initialized length), proceed */
+                                                sprintf($1.name, "%s[%d]", $1.name, $3.ival);
+                                                $1.id_val.val_type = $6.val_type;   /* Match the ID type to the assignation's */
+                                                to_str = type_to_str($1.id_val.val_type);
+                                                if ($6.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
+                                                    fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $6.ival);
+                                                    sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                    c3a(c3a_mssg);
+                                                    $1.id_val.ival = $6.ival;
+                                                }
+                                                else if ($6.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
+                                                    fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $6.fval);
+                                                    sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                    c3a(c3a_mssg);
+                                                    $1.id_val.fval = $6.fval;
+                                                }
+                                                else if ($6.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
+                                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($6.bval == 1) ? "true" : "false");
+                                                    $1.id_val.bval = $6.bval;
+                                                }
+                                                else if ($6.val_type == STRING_TYPE) {  /* Assign a String to the ID */
+                                                    fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $6.sval);
+                                                    $1.id_val.sval = $6.sval;
+                                                }
+                                                sym_enter($1.name, &$1); /* Update the desired element in the array */
                                             }
-                                            else if ($6.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
-                                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($6.bval == 1) ? "true" : "false");
-                                                $1.id_val.bval = $6.bval;
-                                            }
-                                            else if ($6.val_type == STRING_TYPE) {  /* Assign a String to the ID */
-                                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $6.sval);
-                                                $1.id_val.sval = $6.sval;
-                                            }
-                                            sym_enter($1.name, &$1);
-                                            vars[var_index] = $1.name;
-                                            var_index++;
+                                        }
+                                        else { /* Only access an array if indexing with integers */
+                                            to_str = type_to_str($3.val_type);
+                                            sprintf(err_mssg, "Arrays can only be accessed using 'Integer', not '%s'", to_str);
+                                            free(to_str);
+                                            custom_err_mssg(err_mssg);
                                         }
                                     }
                                     err = false;    
@@ -226,6 +245,61 @@ stmnt:
                                 } 
                                 err = false;
                             }
+    | ID OB expr CB ASSIGN expr BASE    {
+                                            if(!err) {
+                                                if($3.val_type == INT_TYPE) {
+                                                    char* name = $1.name;
+                                                    char arrayName[128];
+                                                    sprintf(arrayName, "%s[0]", name);
+                                                    int result = contains(vars, var_index+1, arrayName);
+                                                    if (result == 0) { /* If there is no array with this name, create placeholders for all of the elements of the array */
+                                                        int i;
+                                                        for (i = 0; i < $3.ival+1; i++) {
+                                                            char* newLmnName = malloc(128);
+                                                            sprintf(newLmnName, "%s[%d]", name, i);
+                                                            id idPlaceHolder = {newLmnName, {UNKNOWN_TYPE}, NO_BASE};
+                                                            sym_enter(newLmnName, &idPlaceHolder);
+                                                            vars[var_index] = newLmnName;
+                                                            var_index++;
+                                                        }
+                                                    }
+                                                    sprintf(arrayName, "%s[%d]", name, $3.ival);
+                                                    int isWithinArrayLength = contains(vars, var_index+1, arrayName);
+                                                    if (isWithinArrayLength == 0) { /* If an array with the same name has already been initialized but we are exceeding its max elements, notify */
+                                                        sprintf(err_mssg, "Array '%s[]' cannot be resized to accept element '%s[%d]'", name, name, $3.ival);
+                                                        custom_err_mssg(err_mssg);
+                                                    }
+                                                    else { /* If we are trying to modify an existing array's element (within its first initialized length), proceed */
+                                                        sprintf($1.name, "%s[%d]", $1.name, $3.ival);
+                                                        if ($6.val_type != INT_TYPE) {
+                                                            to_str = type_to_str($6.val_type);
+                                                            sprintf(err_mssg, "Base conversion (b10 to %s) cannot be applied to type '%s'. Only type 'Integer'", $7, to_str);
+                                                            free(to_str);
+                                                            custom_err_mssg(err_mssg);
+                                                        }
+                                                        else {
+                                                            $1.id_val.val_type = $6.val_type;   /* Match the ID type to the assignation's */
+                                                            to_str = type_to_str($1.id_val.val_type);
+                                                            if (strcmp($7, "b2") == 0) $1.base = BIN_BASE;
+                                                            else if (strcmp($7, "b8") == 0) $1.base = OCT_BASE;
+                                                            else if (strcmp($7, "b10") == 0) $1.base = DEC_BASE;
+                                                            else if (strcmp($7, "b16") == 0) $1.base = HEX_BASE;
+                                                            fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_bases(&$6, $1.base));
+                                                            $1.id_val.ival = $6.ival;
+                                                            sym_enter($1.name, &$1);
+                                                            free(to_str);
+                                                        }
+                                                    }
+                                                }
+                                                else { /* Only access an array if indexing with integers */
+                                                    to_str = type_to_str($3.val_type);
+                                                    sprintf(err_mssg, "Arrays can only be accessed using 'Integer', not '%s'", to_str);
+                                                    free(to_str);
+                                                    custom_err_mssg(err_mssg);
+                                                }
+                                            }
+                                            err = false;    
+                                        }
     | expr      {
                     if(!err) {
                         if ($$.val_type == INT_TYPE) { 
@@ -716,11 +790,13 @@ expr_term:
                 }
     | PI    {  
                 $$.val_type = FLOAT_TYPE; 
-                $$.fval = PI_CONST; 
+                $$.fval = PI_CONST;
+                sprintf($$.temp, "%g", PI_CONST);
             }
     | E     {  
                 $$.val_type = FLOAT_TYPE; 
-                $$.fval = E_CONST; 
+                $$.fval = E_CONST;
+                sprintf($$.temp, "%g", E_CONST);
             }
     | ID    {
                 int result = sym_lookup($1.name, &$1);
@@ -736,6 +812,30 @@ expr_term:
                     custom_err_mssg(err_mssg);
                 }
             }
+    | ID OB expr CB {
+                        if ($3.val_type == INT_TYPE) {
+                            char arrayName[128];
+                            sprintf(arrayName, "%s[%d]", $1.name, $3.ival);
+                            int result = sym_lookup(arrayName, &$1);
+                            if(result == 0) {
+                                $$.val_type = $1.id_val.val_type;
+                                if($1.id_val.val_type == INT_TYPE) { $$.ival = $1.id_val.ival; sprintf($$.temp, "%s", $1.name); }
+                                else if($1.id_val.val_type == FLOAT_TYPE) { $$.fval = $1.id_val.fval; sprintf($$.temp, "%s", $1.name); }
+                                else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
+                                else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
+                            }
+                            else {
+                                sprintf(err_mssg, "Array element '%s' does not exist\n", arrayName); 
+                                custom_err_mssg(err_mssg);
+                            }
+                        }
+                        else {
+                            to_str = type_to_str($3.val_type);
+                            sprintf(err_mssg, "Array cannot be accessed using type '%s' for indexing. Only type 'Integer'\n", to_str); 
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                    }
     | OP expr CP    { 
                         $$.val_type = $2.val_type;
                         if ($2.val_type == INT_TYPE) 
@@ -749,6 +849,16 @@ expr_term:
                     }
 ;
 %%
+
+int contains(char *vars[], int size, const char *value) {
+    int i;
+    for (i = 0; i < size; i++) {
+        if (vars[i] != NULL && strcmp(vars[i], value) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac) {
     if (op1 != NULL) {

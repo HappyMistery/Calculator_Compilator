@@ -33,11 +33,8 @@ typedef struct {
 
 typedef struct {
     char *name;
-    int length;
-    int line;
     value_info id_val;
     base base;
-    bool isArray;
 } id;
 
 

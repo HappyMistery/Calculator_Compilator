@@ -88,8 +88,6 @@ BASE b2|b8|b10|b16
 
 {ID}        {   append_to_buffer(yytext); 
                 yylval.id.name = strdup(yytext);
-                yylval.id.length = yyleng;
-                yylval.id.line = yylineno;
                 yylval.id.id_val.val_type = UNKNOWN_TYPE;
                 yylval.id.base = NO_BASE;
                 return ID;
