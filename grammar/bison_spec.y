@@ -159,6 +159,48 @@ stmnt:
                         } 
                         err = false;
                     }
+    | ID OB expr CB ASSIGN expr {
+                                    if(!err) {
+                                        if($3.val_type == INT_TYPE) {
+                                            char* name = $1.name;
+                                            int i;
+                                            for (i = 0; i < $3.ival; i++) {
+                                                id idPlaceHolder = $1;
+                                                sprintf(idPlaceHolder.name, "%s[%d]", name, i);
+                                                sym_enter(idPlaceHolder.name, &idPlaceHolder);
+                                                vars[var_index] = idPlaceHolder.name;
+                                                var_index++;
+                                            }
+                                            sprintf($1.name, "%s[%d]", $1.name, $3.ival);
+                                            $1.id_val.val_type = $6.val_type;   /* Match the ID type to the assignation's */
+                                            to_str = type_to_str($1.id_val.val_type);
+                                            if ($6.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
+                                                fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $6.ival);
+                                                sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                c3a(c3a_mssg);
+                                                $1.id_val.ival = $6.ival;
+                                            }
+                                            else if ($6.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
+                                                fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $6.fval);
+                                                sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                c3a(c3a_mssg);
+                                                $1.id_val.fval = $6.fval;
+                                            }
+                                            else if ($6.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
+                                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($6.bval == 1) ? "true" : "false");
+                                                $1.id_val.bval = $6.bval;
+                                            }
+                                            else if ($6.val_type == STRING_TYPE) {  /* Assign a String to the ID */
+                                                fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $6.sval);
+                                                $1.id_val.sval = $6.sval;
+                                            }
+                                            sym_enter($1.name, &$1);
+                                            vars[var_index] = $1.name;
+                                            var_index++;
+                                        }
+                                    }
+                                    err = false;    
+                                }
     | ID ASSIGN expr BASE   {   
                                 if(!err) {
                                     if ($3.val_type != INT_TYPE) {
