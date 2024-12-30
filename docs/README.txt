@@ -95,14 +95,14 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
     1.  Les constants PI i E estàn "hardcoded" al codi, en comptes d'estar
         emmagatzemades a la taula de símbols (línies 19, 20).
 
-    2.  La variable 'err_mssg' (línia 28) és un array de 150 chars ja que es
+    2.  La variable 'err_mssg' (línia 33) és un array de 256 chars ja que es
         fa servir per guardar el missatge d'error a loggejar i el missatge més
-        llarg que haurà d'escriure és d'uns 115 chars. Els chars sobrants són 
+        llarg que haurà d'escriure és d'uns 115 chars sense comptar noms de variables. Els chars sobrants són 
         una mesura de precaució.
 
-    3.  La variable booleana 'err' (línia 29) només deixa printar/mostrar
+    3.  La variable booleana 'err' (línia 35) només deixa printar/mostrar
         el resultat d'una expressió en cas de que no hi hagi hagut un error
-        en l'execució d'aquesta (línies 79, 104, 127, 152).
+        en l'execució d'aquesta (línies 132, 163, 230, 255, 310, 345).
 
     4.  Totes les expressions possibles (enteres, reals, boooleanes, string)
         són del mateix tipus <expr_val> ja que  la comprovació de tipus es fa 
@@ -116,13 +116,42 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
     
     7.  En els casos en els que s'ha de fer una operació entre un enter i un 
         real, es casteja el valor de l'enter a real per tal de facilitar 
-        la seva operació (línies 247, 261, 280, ...).
+        la seva operació (línies 423, 504, 650, 762, ...).
+
+    8.  Per a crear una taula unidimensional (array) s'ha d'assignar un valor 
+        a l'última entrada de la taula, és a dir, si es vol crear un vector de 
+        x elements es definirà tal que 'arr_name[x-1] := 0'. D'aquesta manera es
+        creen x entrades a la symtable sense cap valor ni tipus, llestes per a 
+        ser omplertes.
+
+    9.  Les taules unidimensionals no tenen tipus. Poden existir taules que 
+        continguin elements enters, reals, booleans i strings al mateix temps.
+
+    10. Un cop creada una taula unidimensional, no es pot modificar la seva mida,
+        és a dir, si es crea una taula amb la següent comanda:
+                                "noms[5] := "Ricardo""
+        , l'element noms[6] no existeix i si en un futur s'hi intenta assignar 
+        algún valor, es notificarà a l'usuari amb un missatge d'error.
+
+    11. Les taules unidimensionals poden ser indexades amb operacions reals sempre
+        que el resultat d'aquestes operacions sigui un valor enter.
+        L'instrucció "abc[10/2] := true" és totalment vàlida.
+
+    12. L'operació potència real té en compte la part decimal de l'exponent (en
+        cas d'haver-n'hi. Línies 594-599).
 
 ┌──────────────────────────────────────┐
 │                SYMTAB:               │
 └──────────────────────────────────────┘
     1.  El tipus de dades per emmagatzemar variables és 'id' del fitxer
-        'dades.h'. D'aquesta manera podem guardar tots els seus atributs.
+        'dades.h'. D'aquesta manera es poden guardar tots els seus atributs.
+
+┌──────────────────────────────────────┐
+│                  C3A:                │
+└──────────────────────────────────────┘
+    1.  Els temporals tenen un rang de noms des de $t001 fins a $t999.
+
+    2.  L'operació potència (POW) es mostra com un bucle de multiplicacions.
 
 
 ╔══════════════════════════════════<#>═════════════════════════════════╗
@@ -135,6 +164,9 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         que mostrarà en forma de taula ASCII totes les variables definides
         fins al moment de la crida. Aquesta taula conté 3 columnes per a 
         mostrar el nom, el tipus i el valor de cada variable.
+        En el cas de les taules unidimensionals, mostrarà tots els elements 
+        d'una mateixa taula de manera continuada, sense altres variables 
+        entre mig.
 
 
 ╔══════════════════════════════════<#>═════════════════════════════════╗
@@ -146,7 +178,7 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         de la pràctica. 
         Lo únic que podria considerar-se una limitació
         és el fet de que hi ha 1 conflicte shift/reduce degut a l'operació
-        de la potència (línia 344 a bison_spec.y). Actualment, i per a que 
+        de la potència (línia 570 a bison_spec.y). Actualment, i per a que 
         la potència funcioni tal i com es demana, la gramàtica ha 
         d'especificar "expr3 POW expr2" però això dona el conflicte. En canvi,
         si s'especifica "expr2 POW expr3", el conflicte desapareix.

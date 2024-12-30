@@ -598,8 +598,8 @@ expr2:
                                 c3a(c3a_mssg);
                             }
                         } else { /* If both operands are integers, do an Integer power */
-                            $$.val_type = INT_TYPE; 
-                            $$.ival = pow($1.ival, $3.ival); 
+                            $$.val_type = INT_TYPE;
+                            $$.ival = pow($1.ival, $3.ival);
                             sprintf($$.temp, "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %d", $$.temp, $1.ival); /* Initialize value to multiply over itself */
                             c3a(c3a_mssg);
