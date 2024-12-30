@@ -32,7 +32,6 @@
 
   char err_mssg[256];
   char c3a_mssg[256];
-  char temp[256];
   bool err = false;
   char *to_str;
   char *vars[256];
@@ -162,6 +161,13 @@ stmnt:
                     }
     | ID OB expr CB ASSIGN expr {
                                     if(!err) {
+                                        if ($3.val_type == FLOAT_TYPE && (($3.fval - floor($3.fval) < 0.000001) && ($3.fval - floor($3.fval) > -0.000001))) {
+                                            $3.ival = floor($3.fval);
+                                            $3.val_type = INT_TYPE;
+                                            sprintf(c3a_mssg, "$t%03d := F2I %s", c3aOpCount++, $3.temp);
+                                            sprintf($3.temp, "$t%03d", c3aOpCount);
+                                            c3a(c3a_mssg);
+                                        }
                                         if($3.val_type == INT_TYPE) {
                                             char* name = $1.name;
                                             char arrayName[128];
@@ -865,10 +871,8 @@ void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac) {
         if (op1->val_type == INT_TYPE) {
             op1->fval = (float)op1->ival;
             if (store3ac) {
-                char temp[16];
-                sprintf(temp, "$t%03d", c3aOpCount++);
-                sprintf(c3a_mssg, "%s := I2F %s", temp, op1->temp);
-                sprintf(op1->temp, "%s", temp);
+                sprintf(c3a_mssg, "$t%03d := I2F %s", c3aOpCount++, op1->temp);
+                sprintf(op1->temp, "$t%03d", c3aOpCount);
                 c3a(c3a_mssg);
             }
         }
@@ -877,10 +881,8 @@ void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac) {
         if (op2->val_type == INT_TYPE) {
             op2->fval = (float)op2->ival;
             if (store3ac) {
-                char temp[16];
-                sprintf(temp, "$t%03d", c3aOpCount++);
-                sprintf(c3a_mssg, "%s := I2F %s", temp, op2->temp);
-                sprintf(op2->temp, "%s", temp);
+                sprintf(c3a_mssg, "$t%03d := I2F %s", c3aOpCount++, op2->temp);
+                sprintf(op2->temp, "$t%03d", c3aOpCount);
                 c3a(c3a_mssg);
             }
         }
