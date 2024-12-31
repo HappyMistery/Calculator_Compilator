@@ -26,6 +26,7 @@
   int contains(char *vars[], int size, const char *value);
   void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac);
   char* switch_bases(value_info *val, base base);
+  void explicit_cast_value(value_info *value, const char *cast_type);
   void custom_err_mssg(const char *s);
   void c3a(const char *s);
   void buildTable(char *vars[], int var_index);
@@ -65,7 +66,7 @@
 %token <id> ID
 %token <ival> INT BOOL
 %token <fval> FLOAT PI E SIN COS TAN
-%token <sval> STRING BASE
+%token <sval> STRING BASE CAST
 %token <sense_valor> COMM ASSIGN ENDLINE
                       ADD SUB MUL DIV MOD POW 
                       HIG HEQ LOW LEQ EQU NEQ 
@@ -134,14 +135,10 @@ stmnt:
                             to_str = type_to_str($1.id_val.val_type);
                             if ($3.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
                                 fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
-                                sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
-                                c3a(c3a_mssg);
                                 $1.id_val.ival = $3.ival;
                             }
                             else if ($3.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
                                 fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
-                                sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
-                                c3a(c3a_mssg);
                                 $1.id_val.fval = $3.fval;
                             }
                             else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
@@ -152,6 +149,8 @@ stmnt:
                                 fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $3.sval);
                                 $1.id_val.sval = $3.sval;
                             }
+                            sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
+                            c3a(c3a_mssg);
                             sym_enter($1.name, &$1);
                             vars[var_index] = $1.name;
                             var_index++;
@@ -718,6 +717,17 @@ expr4:
                                             }
                                             free(to_str);
                                         }
+    | CAST expr_term        {
+                                explicit_cast_value(&$2, $1);
+                                $$.val_type = $2.val_type;
+                                $$.ival = $2.ival;
+                                $$.fval = $2.fval;
+                                $$.sval = $2.sval;
+                                $$.bval = $2.bval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s %s", $$.temp, $1, $2.temp);
+                                c3a(c3a_mssg);
+                            }
     | expr4 HIG expr_term   { /* Booleans and Strings cannot use the higher operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                     custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");

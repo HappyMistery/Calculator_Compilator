@@ -93,16 +93,16 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
 │                 BISON:               │
 └──────────────────────────────────────┘
     1.  Les constants PI i E estàn "hardcoded" al codi, en comptes d'estar
-        emmagatzemades a la taula de símbols (línies 19, 20).
+        emmagatzemades a la taula de símbols (línies 21, 22).
 
-    2.  La variable 'err_mssg' (línia 33) és un array de 256 chars ja que es
+    2.  La variable 'err_mssg' (línia 34) és un array de 256 chars ja que es
         fa servir per guardar el missatge d'error a loggejar i el missatge més
         llarg que haurà d'escriure és d'uns 115 chars sense comptar noms de variables. Els chars sobrants són 
         una mesura de precaució.
 
-    3.  La variable booleana 'err' (línia 35) només deixa printar/mostrar
+    3.  La variable booleana 'err' (línia 36) només deixa printar/mostrar
         el resultat d'una expressió en cas de que no hi hagi hagut un error
-        en l'execució d'aquesta (línies 132, 163, 230, 255, 310, 345).
+        en l'execució d'aquesta (línies 133, 162, 229, 254, 309, 344).
 
     4.  Totes les expressions possibles (enteres, reals, boooleanes, string)
         són del mateix tipus <expr_val> ja que  la comprovació de tipus es fa 
@@ -115,8 +115,8 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         de dada mentre alguna d'aquestes dues dades sigui de tipus string.
     
     7.  En els casos en els que s'ha de fer una operació entre un enter i un 
-        real, es casteja el valor de l'enter a real per tal de facilitar 
-        la seva operació (línies 423, 504, 650, 762, ...).
+        real, es casteja el valor de l'enter a real de manera implícita per 
+        tal de facilitar la seva operació (línies 422, 503, 649, 763, ...).
 
     8.  Per a crear una taula unidimensional (array) s'ha d'assignar un valor 
         a l'última entrada de la taula, és a dir, si es vol crear un vector de 
@@ -138,7 +138,11 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         L'instrucció "abc[10/2] := true" és totalment vàlida.
 
     12. L'operació potència real té en compte la part decimal de l'exponent (en
-        cas d'haver-n'hi. Línies 594-599).
+        cas d'haver-n'hi. Línies 593-598).
+    
+    13. Els casts explícits entre tipus de dades interpreten que han de castejar 
+        l'expressió immediatament següent i no més, o en el seu defecte, tot el que 
+        es trobi dins del parèntesi immediatament següent (igual que sin(), cos() i tan()).
 
 ┌──────────────────────────────────────┐
 │                SYMTAB:               │
@@ -168,17 +172,20 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         d'una mateixa taula de manera continuada, sense altres variables 
         entre mig.
 
+    2.  S'han afegit casts explícits entre tipus de dades aritmètics i boooleanes
+        així com entre strings i tipus de dades tant aritmètics com booleanes, 
+        però no en viceversa.
+
 
 ╔══════════════════════════════════<#>═════════════════════════════════╗
 ║                                                                      ║
 ║                              Limitacions                             ║
 ║                                                                      ║
 ╚══════════════════════════════════<#>═════════════════════════════════╝
-    1.  No hi han limitacions respecte al que es demana a l'enunciat 
-        de la pràctica. 
-        Lo únic que podria considerar-se una limitació
-        és el fet de que hi ha 1 conflicte shift/reduce degut a l'operació
-        de la potència (línia 570 a bison_spec.y). Actualment, i per a que 
-        la potència funcioni tal i com es demana, la gramàtica ha 
-        d'especificar "expr3 POW expr2" però això dona el conflicte. En canvi,
-        si s'especifica "expr2 POW expr3", el conflicte desapareix.
+    1.  Podria considerar-se una limitació el fet de que hi ha 1 conflicte 
+        shift/reduce degut a l'operació de la potència (línia 570 a bison_spec.y).
+        Actualment, i per a que la potència funcioni tal i com es demana, la 
+        gramàtica ha d'especificar "expr3 POW expr2" però això dona el conflicte. 
+        En canvi, si s'especifica "expr2 POW expr3", el conflicte desapareix.
+
+    2.  No es poden fer canvis de tipus explícits d'enter a string o de real a string.

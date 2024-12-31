@@ -155,6 +155,59 @@ char* switch_bases(value_info *val, base base) {
     return "";
 }
 
+void explicit_cast_value(value_info *value, const char *cast_type) {
+    switch (value->val_type) {
+        case INT_TYPE:
+            if (strcmp(cast_type, "I2F") == 0) {
+                value->fval = (float)value->ival;
+                value->val_type = FLOAT_TYPE;
+            } else if (strcmp(cast_type, "I2B") == 0) {
+                value->bval = (value->ival != 0);
+                value->val_type = BOOL_TYPE;
+            }
+            break;
+
+        case FLOAT_TYPE:
+            if (strcmp(cast_type, "F2I") == 0) {
+                value->ival = (int)value->fval;
+                value->val_type = INT_TYPE;
+            } else if (strcmp(cast_type, "F2B") == 0) {
+                value->bval = (value->fval != 0.0);
+                value->val_type = BOOL_TYPE;
+            }
+            break;
+
+        case BOOL_TYPE:
+            if (strcmp(cast_type, "B2I") == 0) {
+                value->ival = value->bval;
+                value->val_type = INT_TYPE;
+            } else if (strcmp(cast_type, "B2F") == 0) {
+                value->fval = value->bval;
+                value->val_type = FLOAT_TYPE;
+            } else if (strcmp(cast_type, "B2S") == 0) {
+                value->sval = (value->bval == true) ? "true" : "false";
+                value->val_type = STRING_TYPE;
+            }
+            break;
+
+        case STRING_TYPE:
+            if (strcmp(cast_type, "S2I") == 0) {
+                value->ival = atoi(value->sval);
+                value->val_type = INT_TYPE;
+            } else if (strcmp(cast_type, "S2F") == 0) {
+                value->fval = atof(value->sval);
+                value->val_type = FLOAT_TYPE;
+            } else if (strcmp(cast_type, "S2B") == 0) {
+                value->bval = (strcmp(value->sval, "true") == 0 || strcmp(value->sval, "1") == 0);
+                value->val_type = BOOL_TYPE;
+            }
+            break;
+
+        default:
+            fprintf(stderr, "Error: Unsupported type for casting.\n");
+    }
+}
+
 void buildTable(char *vars[], int var_index) {
     int max_name_length = strlen("Name");
     int max_type_length = strlen("Type");

@@ -49,6 +49,7 @@ BOOL ("true"|"false"|[01])
 COMM (("//"|"#")[^\n]*)|("/*"([^*]|\*+[^*/])**"*/")
 ID [a-zA-Z_][a-zA-Z0-9_]*
 BASE b2|b8|b10|b16
+CAST I2F|I2B|F2I|F2B|B2I|B2F|B2S|S2I|S2F|S2B
 /********************** RULES **********************/
 %%
 
@@ -71,6 +72,7 @@ BASE b2|b8|b10|b16
 "done"      { append_to_buffer(yytext); return DONE; }
 
 {BASE}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return BASE; }
+{CAST}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return CAST; }
 
 
 {INT}       { append_to_buffer(yytext); yylval.ival = atoi(yytext); return INT; }
