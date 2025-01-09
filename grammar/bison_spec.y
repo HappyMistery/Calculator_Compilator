@@ -45,7 +45,7 @@
   int loopLine[8];
   char loopTemp[8][16];
   char loopCondTemp[8][16];
-  bool isConditionalLoop[8] = {[0 ... 7] = false};
+  bool isOptionalLoop[8] = {[0 ... 7] = false}; /* Variable used for loops that have the possibility to not go into the loop's body (while, for x in range) */
   char loopBuffer[8][512][256];
   int loopBufferIndex[8] = {[0 ... 7] = 0};
   bool writtingBufferToFile = false;
@@ -106,11 +106,13 @@ loop:
                         if ($2.val_type == INT_TYPE) {
                             if ($2.ival > 0) {
                                 loopIndex++;
+                                loopBufferIndex[loopIndex] = 0;
+                                loopLine[loopIndex] = c3aLineNo + 2;
+                                isOptionalLoop[loopIndex] = false;
+                                sprintf(loopCondTemp[loopIndex], "%s", $2.temp);
                                 sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
                                 sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 0);
                                 c3a(c3a_mssg);
-                                loopLine[loopIndex] = c3aLineNo + 1;
-                                sprintf(loopCondTemp[loopIndex], "%s", $2.temp);
                             } else {
                                 sprintf(err_mssg, "Loop has to be repeated at least 1 time, not lower");
                                 custom_err_mssg(err_mssg);
@@ -124,10 +126,10 @@ loop:
     | WHL stmnt DO  {
                         if ($2.val_type == BOOL_TYPE) {
                             loopIndex++;
-                            sprintf(loopTemp[loopIndex], "%s", $2.temp);
+                            loopBufferIndex[loopIndex] = 1;
                             loopLine[loopIndex] = c3aLineNo - previousLines + 1;
-                            isConditionalLoop[loopIndex] = true;
-                            loopBufferIndex[loopIndex]++;
+                            isOptionalLoop[loopIndex] = true;
+                            sprintf(loopTemp[loopIndex], "%s", $2.temp);
                         } else {
                             sprintf(err_mssg, "Structure for a while loop is \"while <boolean_expression> do <statement_list> done\"");
                             free(to_str);
@@ -137,41 +139,52 @@ loop:
                     }
     | DONE  {   
                 if (loopIndex >= 0) {
-                    if (!isConditionalLoop[loopIndex]) {
+                    if (!isOptionalLoop[loopIndex]) {
                         int i;
                         for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
                             if (loopIndex > 0) {
                                 char temp[256];
-                                sprintf(temp, "%s", loopBuffer[loopIndex][loopBufferIndex[loopIndex]]);
-                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]], "%s", temp);
+                                sprintf(temp, "%s", loopBuffer[loopIndex][i]);
+                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
                             } else {
                                 writtingBufferToFile = true;
                                 sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
                                 c3a(c3a_mssg);
                             }
                         }
-                        sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
-                        c3a(c3a_mssg);
-                        sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
-                        c3a(c3a_mssg);
-                        writtingBufferToFile = false;
+                        if (loopIndex > 0) {
+                            if (!isOptionalLoop[loopIndex-1]) loopLine[loopIndex] = loopBufferIndex[loopIndex-1] + 1;
+                            else loopLine[loopIndex] = loopBufferIndex[loopIndex-1] - loopBufferIndex[loopIndex] + loopLine[loopIndex];
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                        } else {
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                            c3a(c3a_mssg);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                            c3a(c3a_mssg);
+                            writtingBufferToFile = false;
+                        }
                     } else {
                         sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2);
                         int i;
                         for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
                             if (loopIndex > 0) {
                                 char temp[256];
-                                sprintf(temp, "%s", loopBuffer[loopIndex][loopBufferIndex[loopIndex]]);
-                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]], "%s", temp);
+                                sprintf(temp, "%s", loopBuffer[loopIndex][i]);
+                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
                             } else {
                                 writtingBufferToFile = true;
                                 sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
                                 c3a(c3a_mssg);
                             }
                         }
-                        sprintf(c3a_mssg, "GOTO %d", loopLine[loopIndex]);
-                        c3a(c3a_mssg);
-                        writtingBufferToFile = false;
+                        if (loopIndex > 0) {
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "GOTO %d", loopLine[loopIndex]);
+                        } else {
+                            sprintf(c3a_mssg, "GOTO %d", loopLine[loopIndex]);
+                            c3a(c3a_mssg);
+                            writtingBufferToFile = false;
+                        }
                     }
                     loopIndex--;
                 } else {
