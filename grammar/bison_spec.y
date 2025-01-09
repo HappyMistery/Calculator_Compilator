@@ -39,11 +39,18 @@
   int var_index = 0;
   int c3aLineNo = 0;
   int c3aOpCount = 1;
-  int loopLine = 0;
-  char loopTemp[16];
-  char loopCondTemp[16];
-  bool isLoopTarget = false;
-  bool inLoop = false;
+  int c3aLines = 0;
+  int previousLines;
+
+  int loopLine[8];
+  char loopTemp[8][16];
+  char loopCondTemp[8][16];
+  bool isConditionalLoop[8] = {[0 ... 7] = false};
+  char loopBuffer[8][512][256];
+  int loopBufferIndex[8] = {[0 ... 7] = 0};
+  bool writtingBufferToFile = false;
+
+  int loopIndex = -1;
 %}
 %define parse.error verbose
 %locations
@@ -74,7 +81,7 @@
                       LEN SUBSTR
                       OP CP OB CB
                       SHVAR
-                      REP DO DONE
+                      REP WHL UNTL DO DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
@@ -95,36 +102,85 @@ stmnt_list:
 ;
 
 loop:
-    REP {
-            isLoopTarget = true;
-            inLoop = true;
-        }
-    | stmnt DO  {
-                    if (inLoop && ($1.val_type == INT_TYPE || $1.val_type == FLOAT_TYPE)) {
-                        sprintf(loopTemp, "$t%03d", c3aOpCount++);
-                        sprintf(c3a_mssg, "%s := %d", loopTemp, 0);
-                        c3a(c3a_mssg);
-                        loopLine = c3aLineNo + 1;
-                        sprintf(loopCondTemp, "%s", $1.temp);
-                        isLoopTarget = false;
-                    } else {
-                        sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
-                        free(to_str);
-                        custom_err_mssg(err_mssg);
+    REP stmnt DO    {
+                        if ($2.val_type == INT_TYPE) {
+                            if ($2.ival > 0) {
+                                loopIndex++;
+                                sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 0);
+                                c3a(c3a_mssg);
+                                loopLine[loopIndex] = c3aLineNo + 1;
+                                sprintf(loopCondTemp[loopIndex], "%s", $2.temp);
+                            } else {
+                                sprintf(err_mssg, "Loop has to be repeated at least 1 time, not lower");
+                                custom_err_mssg(err_mssg);
+                            }
+                        } else {
+                            sprintf(err_mssg, "Structure for a repeat loop is \"repeat <arithmetic_integer_expression> do <statement_list> done\"");
+                            custom_err_mssg(err_mssg);
+                        }
+                        err = false;
                     }
-                }
+    | WHL stmnt DO  {
+                        if ($2.val_type == BOOL_TYPE) {
+                            loopIndex++;
+                            sprintf(loopTemp[loopIndex], "%s", $2.temp);
+                            loopLine[loopIndex] = c3aLineNo - previousLines + 1;
+                            isConditionalLoop[loopIndex] = true;
+                            loopBufferIndex[loopIndex]++;
+                        } else {
+                            sprintf(err_mssg, "Structure for a while loop is \"while <boolean_expression> do <statement_list> done\"");
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                        err = false;
+                    }
     | DONE  {   
-                if (inLoop) {
-                    sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1);
-                    c3a(c3a_mssg);
-                    sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
-                    c3a(c3a_mssg);
-                    inLoop = false;
+                if (loopIndex >= 0) {
+                    if (!isConditionalLoop[loopIndex]) {
+                        int i;
+                        for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
+                            if (loopIndex > 0) {
+                                char temp[256];
+                                sprintf(temp, "%s", loopBuffer[loopIndex][loopBufferIndex[loopIndex]]);
+                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]], "%s", temp);
+                            } else {
+                                writtingBufferToFile = true;
+                                sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
+                                c3a(c3a_mssg);
+                            }
+                        }
+                        sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                        c3a(c3a_mssg);
+                        sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                        c3a(c3a_mssg);
+                        writtingBufferToFile = false;
+                    } else {
+                        sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2);
+                        int i;
+                        for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
+                            if (loopIndex > 0) {
+                                char temp[256];
+                                sprintf(temp, "%s", loopBuffer[loopIndex][loopBufferIndex[loopIndex]]);
+                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]], "%s", temp);
+                            } else {
+                                writtingBufferToFile = true;
+                                sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
+                                c3a(c3a_mssg);
+                            }
+                        }
+                        sprintf(c3a_mssg, "GOTO %d", loopLine[loopIndex]);
+                        c3a(c3a_mssg);
+                        writtingBufferToFile = false;
+                    }
+                    loopIndex--;
                 } else {
-                    sprintf(err_mssg, "Structure for a loop is \"repeat <arithmetic_expression> do <statement_list> done\"");
+                    sprintf(err_mssg, "Cannot use the word 'done' without a previous loop declaration\"");
                     free(to_str);
                     custom_err_mssg(err_mssg);
                 }
+                err = false;
+                
             }
 ;
 
@@ -133,22 +189,28 @@ stmnt:
                         if(!err) {
                             $1.id_val.val_type = $3.val_type;   /* Match the ID type to the assignation's */
                             to_str = type_to_str($1.id_val.val_type);
-                            if ($3.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
+                            if ($3.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
                                 fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $3.ival);
                                 $1.id_val.ival = $3.ival;
+                                $$.ival = $3.ival;
                             }
-                            else if ($3.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
+                            else if ($3.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
                                 fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $3.fval);
                                 $1.id_val.fval = $3.fval;
+                                $$.fval = $3.fval;
                             }
                             else if ($3.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
                                 fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($3.bval == 1) ? "true" : "false");
                                 $1.id_val.bval = $3.bval;
+                                $$.bval = $3.bval;
                             }
                             else if ($3.val_type == STRING_TYPE) {  /* Assign a String to the ID */
                                 fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $3.sval);
                                 $1.id_val.sval = $3.sval;
+                                $$.sval = $3.sval;
                             }
+                            $$.val_type = $3.val_type;
+                            sprintf($$.temp, "%s", $1.name);
                             sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
                             c3a(c3a_mssg);
                             sym_enter($1.name, &$1);
@@ -157,6 +219,8 @@ stmnt:
                             free(to_str);
                         } 
                         err = false;
+                        previousLines = c3aLines;
+                        c3aLines = 0;
                     }
     | ID OB expr CB ASSIGN expr {
                                     if(!err) {
@@ -193,26 +257,29 @@ stmnt:
                                                 sprintf($1.name, "%s[%d]", $1.name, $3.ival);
                                                 $1.id_val.val_type = $6.val_type;   /* Match the ID type to the assignation's */
                                                 to_str = type_to_str($1.id_val.val_type);
-                                                if ($6.val_type == INT_TYPE && !isLoopTarget) {      /* Assign an Integer to the ID */
+                                                if ($6.val_type == INT_TYPE) {      /* Assign an Integer to the ID */
                                                     fprintf(yyout, "[%s] %s = %d\n", to_str, $1.name, $6.ival);
-                                                    sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
-                                                    c3a(c3a_mssg);
                                                     $1.id_val.ival = $6.ival;
+                                                    $$.ival = $6.ival;
                                                 }
-                                                else if ($6.val_type == FLOAT_TYPE && !isLoopTarget) {   /* Assign a Float to the ID */
+                                                else if ($6.val_type == FLOAT_TYPE) {   /* Assign a Float to the ID */
                                                     fprintf(yyout, "[%s] %s = %g\n", to_str, $1.name, $6.fval);
-                                                    sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
-                                                    c3a(c3a_mssg);
                                                     $1.id_val.fval = $6.fval;
+                                                    $$.fval = $6.fval;
                                                 }
                                                 else if ($6.val_type == BOOL_TYPE) {    /* Assign a Boolean to the ID */
                                                     fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, ($6.bval == 1) ? "true" : "false");
                                                     $1.id_val.bval = $6.bval;
+                                                    $$.bval = $6.bval;
                                                 }
                                                 else if ($6.val_type == STRING_TYPE) {  /* Assign a String to the ID */
                                                     fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, $6.sval);
                                                     $1.id_val.sval = $6.sval;
+                                                    $$.sval = $6.sval;
                                                 }
+                                                sprintf($$.temp, "%s", $1.name);
+                                                sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                c3a(c3a_mssg);
                                                 sym_enter($1.name, &$1); /* Update the desired element in the array */
                                             }
                                         }
@@ -223,7 +290,9 @@ stmnt:
                                             custom_err_mssg(err_mssg);
                                         }
                                     }
-                                    err = false;    
+                                    err = false;
+                                    previousLines = c3aLines;
+                                    c3aLines = 0; 
                                 }
     | ID ASSIGN expr BASE   {   
                                 if(!err) {
@@ -241,7 +310,11 @@ stmnt:
                                         else if (strcmp($4, "b10") == 0) $1.base = DEC_BASE;
                                         else if (strcmp($4, "b16") == 0) $1.base = HEX_BASE;
                                         fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_bases(&$3, $1.base));
+                                        sprintf(c3a_mssg, "%s := %s", $1.name, $3.temp);
+                                        c3a(c3a_mssg);
                                         $1.id_val.ival = $3.ival;
+                                        $$.ival = $3.ival;
+                                        sprintf($$.temp, "%s", $1.name);
                                         sym_enter($1.name, &$1);
                                         vars[var_index] = $1.name;
                                         var_index++;
@@ -249,6 +322,8 @@ stmnt:
                                     }
                                 } 
                                 err = false;
+                                previousLines = c3aLines;
+                                c3aLines = 0;
                             }
     | ID OB expr CB ASSIGN expr BASE    {
                                             if(!err) {
@@ -290,7 +365,11 @@ stmnt:
                                                             else if (strcmp($7, "b10") == 0) $1.base = DEC_BASE;
                                                             else if (strcmp($7, "b16") == 0) $1.base = HEX_BASE;
                                                             fprintf(yyout, "[%s] %s = %s\n", to_str, $1.name, switch_bases(&$6, $1.base));
+                                                            sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                            c3a(c3a_mssg);
                                                             $1.id_val.ival = $6.ival;
+                                                            $$.ival = $6.ival;
+                                                            sprintf($$.temp, "%s", $1.name);
                                                             sym_enter($1.name, &$1);
                                                             free(to_str);
                                                         }
@@ -303,29 +382,21 @@ stmnt:
                                                     custom_err_mssg(err_mssg);
                                                 }
                                             }
-                                            err = false;    
+                                            err = false;
+                                            previousLines = c3aLines;
+                                            c3aLines = 0; 
                                         }
     | expr      {
                     if(!err) {
                         if ($$.val_type == INT_TYPE) { 
                             $$.val_type = INT_TYPE; 
                             $$.ival = $1.ival; 
-                            if (!isLoopTarget) {
-                                fprintf(yyout, "[Integer] %d\n", $1.ival);
-                                sprintf(c3a_mssg, "PARAM %s", $$.temp);
-                                c3a(c3a_mssg);
-                                c3a("CALL PUTI, 1");
-                            }
+                            fprintf(yyout, "[Integer] %d\n", $1.ival);
                         }
                         else if ($$.val_type == FLOAT_TYPE) { 
                             $$.val_type = FLOAT_TYPE; 
                             $$.ival = $1.fval; 
-                            if (!isLoopTarget) {
-                                fprintf(yyout, "[Float] %g\n", $1.fval);
-                                sprintf(c3a_mssg, "PARAM %s", $$.temp);
-                                c3a(c3a_mssg);
-                                c3a("CALL PUTF, 1");
-                            }
+                            fprintf(yyout, "[Float] %g\n", $1.fval);
                         }
                         else if ($$.val_type == BOOL_TYPE) { 
                             $$.val_type = BOOL_TYPE; 
@@ -337,8 +408,13 @@ stmnt:
                             $$.sval = $1.sval; 
                             fprintf(yyout, "[String] %s\n", $1.sval); 
                         }
+                        sprintf(c3a_mssg, "PARAM %s", $$.temp);
+                        c3a(c3a_mssg);
+                        c3a("CALL PUTI, 1");
                     } 
                     err = false;
+                    previousLines = c3aLines;
+                    c3aLines = 0;
                 }
     | expr BASE {
                     if(!err) {
@@ -357,12 +433,19 @@ stmnt:
                             $$.val_type = INT_TYPE; 
                             $$.ival = $1.ival;
                             fprintf(yyout, "[Integer] %s\n", switch_bases(&$1, base));
+                            sprintf(c3a_mssg, "PARAM %s", $$.temp);
+                            c3a(c3a_mssg);
+                            c3a("CALL PUTI, 1");
                         }
                     } 
                     err = false;
+                    previousLines = c3aLines;
+                    c3aLines = 0;
                 }
     | SHVAR { 
                 buildTable(vars, var_index);
+                previousLines = c3aLines;
+                c3aLines = 0;
             }
 ;
 
@@ -451,6 +534,9 @@ expr:
                                         $$.sval = strcat(str, $3.sval);
                                     }
                                 }
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s CONCAT %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             } /* If none one of the operands is a string, a boolean cannot use the addition operator */
                             else if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                 custom_err_mssg("Addition (+) operator cannot be applied to type 'Boolean'");
@@ -560,6 +646,9 @@ expr1:
                             else {
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.bval || $3.bval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s ORR %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             }
                         }
     | expr2
@@ -579,16 +668,16 @@ expr2:
                             sprintf($$.temp, "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %g", $$.temp, $1.fval); /* Initialize value to multiply over itself */
                             c3a(c3a_mssg);
-                            sprintf(loopTemp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %d", loopTemp, 1); /* Start from iteration 1 instead of 0 */
+                            sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 1); /* Start from iteration 1 instead of 0 */
                             c3a(c3a_mssg);
-                            loopLine = c3aLineNo + 1;
-                            sprintf(loopCondTemp, "%d", flooredVal);
+                            loopLine[loopIndex] = c3aLineNo + 1;
+                            sprintf(loopCondTemp[loopIndex], "%d", flooredVal);
                             sprintf(c3a_mssg, "%s := %s MULF %g", $$.temp, $$.temp, $1.fval); /* Multiply value over itslef */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1); /* Keep iterating */
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1); /* Keep iterating */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
                             c3a(c3a_mssg);
                             if ($3.val_type == FLOAT_TYPE) {
                                 float floatingExp = $3.fval - flooredVal;
@@ -602,16 +691,16 @@ expr2:
                             sprintf($$.temp, "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %d", $$.temp, $1.ival); /* Initialize value to multiply over itself */
                             c3a(c3a_mssg);
-                            sprintf(loopTemp, "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %d", loopTemp, 1); /* Start from iteration 1 instead of 0 */
+                            sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 1); /* Start from iteration 1 instead of 0 */
                             c3a(c3a_mssg);
-                            loopLine = c3aLineNo + 1;
-                            sprintf(loopCondTemp, "%d", $3.ival);
+                            loopLine[loopIndex] = c3aLineNo + 1;
+                            sprintf(loopCondTemp[loopIndex], "%d", $3.ival);
                             sprintf(c3a_mssg, "%s := %s MULI %d", $$.temp, $$.temp, $1.ival); /* Multiply value over itslef */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp, loopTemp, 1); /* Keep iterating */
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1); /* Keep iterating */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp, loopCondTemp, loopLine);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
                             c3a(c3a_mssg);                        
                         }
                     }
@@ -620,7 +709,10 @@ expr2:
                                 custom_err_mssg("And (and) operator can only be applied to type 'Boolean'");
                             else { 
                                 $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.bval && $3.bval; 
+                                $$.bval = $1.bval && $3.bval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s AND %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             }
                         }
     | expr3
@@ -637,6 +729,9 @@ expr3:
                         $$.val_type = FLOAT_TYPE; 
                         if(sin($2.fval) < 0.000001 && sin($2.fval) > -0.000001) $$.fval = 0;  /* Values really close to 0 get treated as 0 */
                         else $$.fval = sin($2.fval);  /* calculate sin(x) */
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := SIN %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg);
                     }
                 }
     | COS expr4 { 
@@ -650,6 +745,9 @@ expr3:
                         $$.val_type = FLOAT_TYPE; 
                         if(cos($2.fval) < 0.000001 && cos($2.fval) > -0.000001) $$.fval = 0;  /* Values really close to 0 get treated as 0 */
                         else $$.fval = cos($2.fval);  /* calculate cos(x) */
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := COS %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg);
                     }
                 }
     | TAN expr4 { 
@@ -665,6 +763,9 @@ expr3:
                         else { 
                             $$.val_type = FLOAT_TYPE; 
                             $$.fval = sin($2.fval)/cos($2.fval);  /* calculate tan(x) */
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := TAN %s", $$.temp, $2.temp);
+                            c3a(c3a_mssg);
                         }
                     }
                 }
@@ -673,7 +774,10 @@ expr3:
                         custom_err_mssg("Not (not) operator can only be applied to type 'Boolean'");
                     else { 
                         $$.val_type = BOOL_TYPE;
-                        $$.bval = !$2.bval; 
+                        $$.bval = !$2.bval;
+                        sprintf($$.temp, "$t%03d", c3aOpCount++);
+                        sprintf(c3a_mssg, "%s := NOT %s", $$.temp, $2.temp);
+                        c3a(c3a_mssg); 
                     }
                 }
     | expr4
@@ -683,7 +787,10 @@ expr4:
     LEN OP expr4 CP { /* Can only use LEN() with a string */
                         if ($3.val_type == STRING_TYPE) {  
                             $$.val_type = INT_TYPE; 
-                            $$.ival = strlen($3.sval); 
+                            $$.ival = strlen($3.sval);
+                            sprintf($$.temp, "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %i", $$.temp, $$.ival);
+                            c3a(c3a_mssg);
                         }
                         else { 
                             to_str = type_to_str($3.val_type);
@@ -711,9 +818,12 @@ expr4:
                                             else {
                                                 char *str = (char *)malloc($5.ival + 2); /* Ensure enough memory for the final substring */
                                                 memcpy(str, $3.sval+$4.ival, $5.ival); 
-                                                str[$5.ival] = '\0'; 
+                                                str[$5.ival] = '\0';
                                                 $$.val_type = STRING_TYPE; 
                                                 $$.sval = str;
+                                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                                sprintf(c3a_mssg, "%s := %s", $$.temp, str);
+                                                c3a(c3a_mssg);
                                             }
                                             free(to_str);
                                         }
@@ -733,36 +843,80 @@ expr4:
                                     custom_err_mssg("Higher (>) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Higher (>) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3, false); 
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.fval > $3.fval;
+                                else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {
+                                    cast_vals_to_flt(&$1, &$3, false); 
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.fval > $3.fval;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s GTF %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                } else {
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.ival > $3.ival;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s GTI %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                }
                             }
     | expr4 HEQ expr_term   { /* Booleans and Strings cannot use the higher or equal operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                     custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Higher or equal (>=) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3, false); 
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.fval >= $3.fval;
+                                else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {
+                                    cast_vals_to_flt(&$1, &$3, false); 
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.fval >= $3.fval;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s GEF %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                } else {
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.ival >= $3.ival;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s GEI %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                }
                             }
     | expr4 LOW expr_term   { /* Booleans and Strings cannot use the lower operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                     custom_err_mssg("Lower (<) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Lower (<) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3, false); 
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.fval < $3.fval;
+                                else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {
+                                    cast_vals_to_flt(&$1, &$3, false); 
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.fval < $3.fval;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s LTF %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                } else {
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.ival < $3.ival;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s LTI %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                }
                             }
     | expr4 LEQ expr_term   { /* Booleans and Strings cannot use the lower or equal operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
                                     custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'Boolean'");
                                 else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
                                     custom_err_mssg("Lower or equal (<=) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3, false); 
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.fval <= $3.fval;
+                                else if ($1.val_type == FLOAT_TYPE || $3.val_type == FLOAT_TYPE) {
+                                    cast_vals_to_flt(&$1, &$3, false); 
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.fval <= $3.fval;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s LEF %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                } else {
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.ival <= $3.ival;
+                                    sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                    sprintf(c3a_mssg, "%s := %s LEI %s", $$.temp, $1.temp, $3.temp);
+                                    c3a(c3a_mssg);
+                                }
                             }
     | expr4 EQU expr_term   { /* Booleans and Strings cannot use the equal operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
@@ -772,6 +926,9 @@ expr4:
                                 cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval == $3.fval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s EQ %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             }
     | expr4 NEQ expr_term   { /* Booleans and Strings cannot use the not equal operator */
                                 if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
@@ -781,6 +938,9 @@ expr4:
                                 cast_vals_to_flt(&$1, &$3, false); 
                                 $$.val_type = BOOL_TYPE; 
                                 $$.bval = $1.fval != $3.fval;
+                                sprintf($$.temp, "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %s NE %s", $$.temp, $1.temp, $3.temp);
+                                c3a(c3a_mssg);
                             }
     | expr_term
 ;
@@ -798,11 +958,13 @@ expr_term:
             }
     | BOOL  {
                 $$.val_type = BOOL_TYPE; 
-                $$.bval = $1; 
+                $$.bval = $1;
+                sprintf($$.temp, "%s", ($1 == 0) ? "false" : "true");
             }      
     | STRING    {
                     $$.val_type = STRING_TYPE; 
                     $$.sval = $1;
+                    sprintf($$.temp, "%s", $1);
                 }
     | PI    {  
                 $$.val_type = FLOAT_TYPE; 
@@ -818,10 +980,11 @@ expr_term:
                 int result = sym_lookup($1.name, &$1);
                 if(result == 0) {
                     $$.val_type = $1.id_val.val_type;
-                    if($1.id_val.val_type == INT_TYPE) { $$.ival = $1.id_val.ival; sprintf($$.temp, "%s", $1.name); }
-                    else if($1.id_val.val_type == FLOAT_TYPE) { $$.fval = $1.id_val.fval; sprintf($$.temp, "%s", $1.name); }
+                    if($1.id_val.val_type == INT_TYPE) $$.ival = $1.id_val.ival;
+                    else if($1.id_val.val_type == FLOAT_TYPE) $$.fval = $1.id_val.fval;
                     else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
                     else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
+                    sprintf($$.temp, "%s", $1.name);
                 }
                 else {
                     sprintf(err_mssg, "Variable '%s' does not exist", $1.name); 
@@ -835,10 +998,11 @@ expr_term:
                             int result = sym_lookup(arrayName, &$1);
                             if(result == 0) {
                                 $$.val_type = $1.id_val.val_type;
-                                if($1.id_val.val_type == INT_TYPE) { $$.ival = $1.id_val.ival; sprintf($$.temp, "%s", $1.name); }
-                                else if($1.id_val.val_type == FLOAT_TYPE) { $$.fval = $1.id_val.fval; sprintf($$.temp, "%s", $1.name); }
+                                if($1.id_val.val_type == INT_TYPE) $$.ival = $1.id_val.ival;
+                                else if($1.id_val.val_type == FLOAT_TYPE) $$.fval = $1.id_val.fval;
                                 else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
                                 else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
+                                sprintf($$.temp, "%s[%d]", $1.name, $3.ival);
                             }
                             else {
                                 sprintf(err_mssg, "Array element '%s' does not exist", arrayName); 
@@ -862,6 +1026,7 @@ expr_term:
                             $$.bval = $2.bval;
                         else 
                             $$.sval = $2.sval;
+                        sprintf($$.temp, "%s", $2.temp);
                     }
 ;
 %%
@@ -882,7 +1047,7 @@ void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac) {
             op1->fval = (float)op1->ival;
             if (store3ac) {
                 sprintf(c3a_mssg, "$t%03d := I2F %s", c3aOpCount++, op1->temp);
-                sprintf(op1->temp, "$t%03d", c3aOpCount);
+                sprintf(op1->temp, "$t%03d", c3aOpCount-1);
                 c3a(c3a_mssg);
             }
         }
@@ -892,7 +1057,7 @@ void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac) {
             op2->fval = (float)op2->ival;
             if (store3ac) {
                 sprintf(c3a_mssg, "$t%03d := I2F %s", c3aOpCount++, op2->temp);
-                sprintf(op2->temp, "$t%03d", c3aOpCount);
+                sprintf(op2->temp, "$t%03d", c3aOpCount-1);
                 c3a(c3a_mssg);
             }
         }
@@ -922,9 +1087,15 @@ void c3a(const char *s) {
             return;
         }
     }
-    c3aLineNo++;
-    fprintf(out3ac, "%d: %s\n", c3aLineNo, s);
-    fflush(out3ac);
+    c3aLines++;
+    if (loopIndex >= 0 && !writtingBufferToFile) {
+        sprintf(loopBuffer[loopIndex][loopBufferIndex[loopIndex]], "%s", s);
+        loopBufferIndex[loopIndex]++;
+    } else {
+        c3aLineNo++;
+        fprintf(out3ac, "%d: %s\n", c3aLineNo, s);
+        fflush(out3ac);
+    }
 }
 
 int yywrap() {

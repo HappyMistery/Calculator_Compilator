@@ -144,6 +144,10 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         l'expressió immediatament següent i no més, o en el seu defecte, tot el que 
         es trobi dins del parèntesi immediatament següent (igual que sin(), cos() i tan()).
 
+    14. Poden haver-hi fins a 8 bucles aniuats (tot i que es recomana no tenir-los ...).
+
+    15. Un bucle pot tenir fins a 512 instruccions en el seu interior.
+
 ┌──────────────────────────────────────┐
 │                SYMTAB:               │
 └──────────────────────────────────────┘
@@ -156,6 +160,11 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
     1.  Els temporals tenen un rang de noms des de $t001 fins a $t999.
 
     2.  L'operació potència (POW) es mostra com un bucle de multiplicacions.
+
+    3.  Funcions com SUBSTR i LEN retornen un 3AC amb el resultat de l'operació.
+
+    4.  Les Strings també produeixen 3AC. A més, l'operació de concatenació
+        d'strings es representa amb el 3AC "CONCAT" tot i no existir. 
 
 
 ╔══════════════════════════════════<#>═════════════════════════════════╗

@@ -49,7 +49,7 @@ BOOL ("true"|"false"|[01])
 COMM (("//"|"#")[^\n]*)|("/*"([^*]|\*+[^*/])**"*/")
 ID [a-zA-Z_][a-zA-Z0-9_]*
 BASE b2|b8|b10|b16
-CAST I2F|I2B|F2I|F2B|B2I|B2F|B2S|S2I|S2F|S2B
+CAST I2F|I2B|F2I|F2B|B2I|B2F|B2C|C2I|C2F|C2B
 /********************** RULES **********************/
 %%
 
@@ -68,6 +68,8 @@ CAST I2F|I2B|F2I|F2B|B2I|B2F|B2S|S2I|S2F|S2B
 "showVars()"    { append_to_buffer(yytext); return SHVAR; }
 
 "repeat"    { append_to_buffer(yytext); return REP; }
+"while"     { append_to_buffer(yytext); return WHL; }
+"until"     { append_to_buffer(yytext); return UNTL; }
 "do"        { append_to_buffer(yytext); return DO; }
 "done"      { append_to_buffer(yytext); return DONE; }
 

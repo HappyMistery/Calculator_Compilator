@@ -184,20 +184,20 @@ void explicit_cast_value(value_info *value, const char *cast_type) {
             } else if (strcmp(cast_type, "B2F") == 0) {
                 value->fval = value->bval;
                 value->val_type = FLOAT_TYPE;
-            } else if (strcmp(cast_type, "B2S") == 0) {
+            } else if (strcmp(cast_type, "B2C") == 0) {
                 value->sval = (value->bval == true) ? "true" : "false";
                 value->val_type = STRING_TYPE;
             }
             break;
 
         case STRING_TYPE:
-            if (strcmp(cast_type, "S2I") == 0) {
+            if (strcmp(cast_type, "C2I") == 0) {
                 value->ival = atoi(value->sval);
                 value->val_type = INT_TYPE;
-            } else if (strcmp(cast_type, "S2F") == 0) {
+            } else if (strcmp(cast_type, "C2F") == 0) {
                 value->fval = atof(value->sval);
                 value->val_type = FLOAT_TYPE;
-            } else if (strcmp(cast_type, "S2B") == 0) {
+            } else if (strcmp(cast_type, "C2B") == 0) {
                 value->bval = (strcmp(value->sval, "true") == 0 || strcmp(value->sval, "1") == 0);
                 value->val_type = BOOL_TYPE;
             }
