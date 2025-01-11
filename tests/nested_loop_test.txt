@@ -20,13 +20,17 @@ repeat a do
 done
 "==============================================="
 repeat 6 * 3 do
-    while (true) do
+    while (true and not false) do
         "a" + "b" + "c" + 2
     done
 done
 "==============================================="
 while (true and false and (PI > d)) do
     while 4 > E do
-        "can't reach"
+        repeat 5 do
+            while 1 <> 1 do
+                "can't reach"
+            done
+        done
     done
 done

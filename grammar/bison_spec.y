@@ -43,7 +43,8 @@
   int previousLines;
   int totalc3aLines = 0;
 
-  int loopLine[8];
+  int loopStart[8];
+  int loopJumpTo[8];
   char loopTemp[8][16];
   char loopCondTemp[8][16];
   bool isOptionalLoop[8] = {[0 ... 7] = false}; /* Variable used for loops that have the possibility to not go into the loop's body (while, for x in range) */
@@ -108,7 +109,8 @@ loop:
                             if ($2.ival > 0) {
                                 loopIndex++;
                                 loopBufferIndex[loopIndex] = 0;
-                                loopLine[loopIndex] = c3aLineNo + 2;
+                                loopJumpTo[loopIndex] = c3aLineNo + 2;
+                                loopStart[loopIndex] = c3aLineNo + 2;
                                 isOptionalLoop[loopIndex] = false;
                                 sprintf(loopCondTemp[loopIndex], "%s", $2.temp);
                                 sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
@@ -128,7 +130,9 @@ loop:
                         if ($2.val_type == BOOL_TYPE) {
                             loopIndex++;
                             loopBufferIndex[loopIndex] = 1;
-                            loopLine[loopIndex] = c3aLineNo - previousLines + 1;
+                            loopJumpTo[loopIndex] = c3aLineNo - previousLines + 1;
+                            loopStart[loopIndex] = c3aLineNo - previousLines + 1;
+                            c3aLineNo++;
                             isOptionalLoop[loopIndex] = true;
                             sprintf(loopTemp[loopIndex], "%s", $2.temp);
                         } else {
@@ -141,8 +145,8 @@ loop:
     | DONE  {   
                 if (loopIndex >= 0) {   /* If there is at least one loop declared */
                     if (isOptionalLoop[loopIndex]) {    /* Loops that don't require at least one iteration (can skip the loop) need this line */
-                        if (loopIndex > 0) sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2 + loopBufferIndex[loopIndex-1]);
-                        else sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2);
+                        c3aLineNo++;
+                        sprintf(loopBuffer[loopIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - loopBufferIndex[loopIndex], loopTemp[loopIndex], c3aLineNo + 1);
                     }
 
                     int i;
@@ -160,23 +164,25 @@ loop:
 
                     if (!isOptionalLoop[loopIndex]) {
                         if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add conditional lines */
-                            if (!isOptionalLoop[loopIndex-1]) { printf("%d\n", 0); loopLine[loopIndex] = /* Línia en la que es printa -*/ loopBufferIndex[loopIndex] - 1; }
-                            else loopLine[loopIndex] = loopBufferIndex[loopIndex-1] - loopBufferIndex[loopIndex] + loopLine[loopIndex];
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: %s := %s ADDI %d", c3aLineNo+1, loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                            c3aLineNo++;
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: IF %s LTI %s GOTO %d", c3aLineNo+1, loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
+                            c3aLineNo++;
                         } else {    /* If we are treating the first loop, printf the extra conditional lines */
-                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                            c3aLineNo++;
+                            sprintf(c3a_mssg, "%d: %s := %s ADDI %d", c3aLineNo, loopTemp[loopIndex], loopTemp[loopIndex], 1);
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                            c3aLineNo++;
+                            sprintf(c3a_mssg, "%d: IF %s LTI %s GOTO %d", c3aLineNo, loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
                             c3a(c3a_mssg);
                             writtingBufferToFile = false;
                         }
                     } else {
                         if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
-                            if (!isOptionalLoop[loopIndex-1]) loopLine[loopIndex] += loopBufferIndex[loopIndex-1];
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "GOTO %d", loopLine[loopIndex]);
+                            if (!isOptionalLoop[loopIndex-1]) loopStart[loopIndex]++;
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: GOTO %d", c3aLineNo, loopStart[loopIndex]);
                         } else {    /* If we are treating the first loop, printf the extra jump line */
-                            sprintf(c3a_mssg, "GOTO %d", loopLine[loopIndex]);
+                            sprintf(c3a_mssg, "%d: GOTO %d", c3aLineNo, loopStart[loopIndex]);
                             c3a(c3a_mssg);
                             writtingBufferToFile = false;
                         }
@@ -679,13 +685,13 @@ expr2:
                             sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 1); /* Start from iteration 1 instead of 0 */
                             c3a(c3a_mssg);
-                            loopLine[loopIndex] = c3aLineNo + 1;
+                            loopJumpTo[loopIndex] = c3aLineNo + 1;
                             sprintf(loopCondTemp[loopIndex], "%d", flooredVal);
                             sprintf(c3a_mssg, "%s := %s MULF %g", $$.temp, $$.temp, $1.fval); /* Multiply value over itslef */
                             c3a(c3a_mssg);
                             sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1); /* Keep iterating */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
                             c3a(c3a_mssg);
                             if ($3.val_type == FLOAT_TYPE) {
                                 float floatingExp = $3.fval - flooredVal;
@@ -702,13 +708,13 @@ expr2:
                             sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 1); /* Start from iteration 1 instead of 0 */
                             c3a(c3a_mssg);
-                            loopLine[loopIndex] = c3aLineNo + 1;
+                            loopJumpTo[loopIndex] = c3aLineNo + 1;
                             sprintf(loopCondTemp[loopIndex], "%d", $3.ival);
                             sprintf(c3a_mssg, "%s := %s MULI %d", $$.temp, $$.temp, $1.ival); /* Multiply value over itslef */
                             c3a(c3a_mssg);
                             sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1); /* Keep iterating */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
                             c3a(c3a_mssg);                        
                         }
                     }
@@ -1098,12 +1104,18 @@ void c3a(const char *s) {
     c3aLines++;
     totalc3aLines++;
     if (loopIndex >= 0 && !writtingBufferToFile) {
-        sprintf(loopBuffer[loopIndex][loopBufferIndex[loopIndex]], "%s", s);
+        c3aLineNo++;
+        sprintf(loopBuffer[loopIndex][loopBufferIndex[loopIndex]], "%d: %s", c3aLineNo, s);
         loopBufferIndex[loopIndex]++;
     } else {
-        c3aLineNo++;
-        fprintf(out3ac, "%d: %s\n", c3aLineNo, s);
-        fflush(out3ac);
+        if (loopIndex == 0) { 
+            fprintf(out3ac, "%s\n", s);
+            fflush(out3ac);
+        } else {
+            c3aLineNo++;
+            fprintf(out3ac, "%d: %s\n", c3aLineNo, s);
+            fflush(out3ac);
+        }
     }
 }
 
