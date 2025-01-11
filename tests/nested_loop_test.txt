@@ -1,7 +1,7 @@
 a :=45 * 3
 while a > 0 or (a-5) == 0 do
     "hello"
-    b := "sring" + true
+    b := "string" + true
     3+3
     repeat 5 do
         "SHUBIIII"
@@ -13,9 +13,11 @@ done
 "==============================================="
 repeat a do
     repeat 3 do
-        repeat 4 do
-            a*9
-        done
+        do
+            while not false do
+                a*9
+            done
+        until a < 12000
     done
 done
 "==============================================="
@@ -27,10 +29,20 @@ done
 "==============================================="
 while (true and false and (PI > d)) do
     while 4 > E do
-        repeat 5 do
-            while 1 <> 1 do
-                "can't reach"
+        do
+            repeat 5 do
+                while 1 <> 1 do
+                    "can't reach"
+                done
             done
-        done
+        until E > PI
     done
 done
+"==============================================="
+x := 0
+do
+    do
+        "DODO"
+        x := x+1
+    until x > 10
+until x == 50

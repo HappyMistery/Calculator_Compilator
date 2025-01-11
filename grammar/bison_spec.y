@@ -98,7 +98,6 @@ calculator:
 stmnt_list:
         stmnt ENDLINE stmnt_list
     |   loop ENDLINE stmnt_list
-    |   loop stmnt_list
     |   ENDLINE stmnt_list
     |   /* empty */     { /* Allow empty input */ }
 ;
@@ -126,6 +125,14 @@ loop:
                         }
                         err = false;
                     }
+    | DO    {
+                loopIndex++;
+                loopBufferIndex[loopIndex] = 0;
+                loopJumpTo[loopIndex] = c3aLineNo + 1;
+                loopStart[loopIndex] = c3aLineNo + 1;
+                isOptionalLoop[loopIndex] = false;
+                err = false;
+            }
     | WHL stmnt DO  {
                         if ($2.val_type == BOOL_TYPE) {
                             loopIndex++;
@@ -196,6 +203,42 @@ loop:
                 err = false;
                 
             }
+    | UNTL stmnt    {
+                        if (loopIndex >= 0) {   /* If there is at least one loop declared */
+                            if ($2.val_type == BOOL_TYPE) {
+                                sprintf(loopTemp[loopIndex], "%s", $2.temp);
+                                int i;
+                                for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
+                                    if (loopIndex > 0) {    /* If we are not treating the first loop, pass info from one buffer to the next */
+                                        char temp[256];
+                                        sprintf(temp, "%s", loopBuffer[loopIndex][i]);
+                                        sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
+                                    } else {    /* If we are treating the first loop, printf the whole loop body */
+                                        writtingBufferToFile = true;
+                                        sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
+                                        c3a(c3a_mssg);
+                                    }
+                                }
+                                if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
+                                    sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: IF %s NE true GOTO %d", c3aLineNo, loopTemp[loopIndex], loopJumpTo[loopIndex]);
+                                } else {    /* If we are treating the first loop, printf the extra jump line */
+                                    sprintf(c3a_mssg, "%d: IF %s NE true GOTO %d", c3aLineNo, loopTemp[loopIndex], loopJumpTo[loopIndex]);
+                                    c3a(c3a_mssg);
+                                    writtingBufferToFile = false;
+                                }
+                                loopIndex--;    /* Indicate one loop just closed */
+                            } else {
+                                sprintf(err_mssg, "Structure for a do until loop is \"do <statement_list> until <boolean_expression> \"");
+                                free(to_str);
+                                custom_err_mssg(err_mssg);
+                            }
+                        } else {    /* If there is no loop declared, ERROR*/
+                            sprintf(err_mssg, "Cannot use 'until <boolean_expression>' without a previous loop declaration\"");
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                        err = false;
+                    }
 ;
 
 stmnt:

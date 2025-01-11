@@ -6,3 +6,10 @@ done
 while 1 < 0 or (true and false) do
     "Impossible"
 done
+"==============================================="
+a := 1
+do
+    "hello" + " friend!"
+    a := a * 2
+    true and not false or false
+until a > 64
