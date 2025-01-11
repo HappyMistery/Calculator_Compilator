@@ -1,0 +1,32 @@
+a :=45 * 3
+while a > 0 or (a-5) == 0 do
+    "hello"
+    b := "sring" + true
+    3+3
+    repeat 5 do
+        "SHUBIIII"
+        d := a/2
+        "OJOOO" + " EKKO"
+    done
+    a := a-2
+done
+"==============================================="
+repeat a do
+    repeat 3 do
+        repeat 4 do
+            a*9
+        done
+    done
+done
+"==============================================="
+repeat 6 * 3 do
+    while (true) do
+        "a" + "b" + "c" + 2
+    done
+done
+"==============================================="
+while (true and false and (PI > d)) do
+    while 4 > E do
+        "can't reach"
+    done
+done

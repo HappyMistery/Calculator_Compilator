@@ -41,6 +41,7 @@
   int c3aOpCount = 1;
   int c3aLines = 0;
   int previousLines;
+  int totalc3aLines = 0;
 
   int loopLine[8];
   char loopTemp[8][16];
@@ -138,26 +139,32 @@ loop:
                         err = false;
                     }
     | DONE  {   
-                if (loopIndex >= 0) {
-                    if (!isOptionalLoop[loopIndex]) {
-                        int i;
-                        for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
-                            if (loopIndex > 0) {
-                                char temp[256];
-                                sprintf(temp, "%s", loopBuffer[loopIndex][i]);
-                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
-                            } else {
-                                writtingBufferToFile = true;
-                                sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
-                                c3a(c3a_mssg);
-                            }
+                if (loopIndex >= 0) {   /* If there is at least one loop declared */
+                    if (isOptionalLoop[loopIndex]) {    /* Loops that don't require at least one iteration (can skip the loop) need this line */
+                        if (loopIndex > 0) sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2 + loopBufferIndex[loopIndex-1]);
+                        else sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2);
+                    }
+
+                    int i;
+                    for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
+                        if (loopIndex > 0) {    /* If we are not treating the first loop, pass info from one buffer to the next */
+                            char temp[256];
+                            sprintf(temp, "%s", loopBuffer[loopIndex][i]);
+                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
+                        } else {    /* If we are treating the first loop, printf the whole loop body */
+                            writtingBufferToFile = true;
+                            sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
+                            c3a(c3a_mssg);
                         }
-                        if (loopIndex > 0) {
-                            if (!isOptionalLoop[loopIndex-1]) loopLine[loopIndex] = loopBufferIndex[loopIndex-1] + 1;
+                    }
+
+                    if (!isOptionalLoop[loopIndex]) {
+                        if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add conditional lines */
+                            if (!isOptionalLoop[loopIndex-1]) { printf("%d\n", 0); loopLine[loopIndex] = /* Línia en la que es printa -*/ loopBufferIndex[loopIndex] - 1; }
                             else loopLine[loopIndex] = loopBufferIndex[loopIndex-1] - loopBufferIndex[loopIndex] + loopLine[loopIndex];
                             sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
                             sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
-                        } else {
+                        } else {    /* If we are treating the first loop, printf the extra conditional lines */
                             sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1);
                             c3a(c3a_mssg);
                             sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopLine[loopIndex]);
@@ -165,29 +172,17 @@ loop:
                             writtingBufferToFile = false;
                         }
                     } else {
-                        sprintf(loopBuffer[loopIndex][0], "IF %s NE true GOTO %d", loopTemp[loopIndex], c3aLineNo + loopBufferIndex[loopIndex] + 2);
-                        int i;
-                        for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
-                            if (loopIndex > 0) {
-                                char temp[256];
-                                sprintf(temp, "%s", loopBuffer[loopIndex][i]);
-                                sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
-                            } else {
-                                writtingBufferToFile = true;
-                                sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
-                                c3a(c3a_mssg);
-                            }
-                        }
-                        if (loopIndex > 0) {
+                        if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
+                            if (!isOptionalLoop[loopIndex-1]) loopLine[loopIndex] += loopBufferIndex[loopIndex-1];
                             sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "GOTO %d", loopLine[loopIndex]);
-                        } else {
+                        } else {    /* If we are treating the first loop, printf the extra jump line */
                             sprintf(c3a_mssg, "GOTO %d", loopLine[loopIndex]);
                             c3a(c3a_mssg);
                             writtingBufferToFile = false;
                         }
                     }
-                    loopIndex--;
-                } else {
+                    loopIndex--;    /* Indicate one loop just closed */
+                } else {    /* If there is no loop declared, ERROR*/
                     sprintf(err_mssg, "Cannot use the word 'done' without a previous loop declaration\"");
                     free(to_str);
                     custom_err_mssg(err_mssg);
@@ -1101,6 +1096,7 @@ void c3a(const char *s) {
         }
     }
     c3aLines++;
+    totalc3aLines++;
     if (loopIndex >= 0 && !writtingBufferToFile) {
         sprintf(loopBuffer[loopIndex][loopBufferIndex[loopIndex]], "%s", s);
         loopBufferIndex[loopIndex]++;
