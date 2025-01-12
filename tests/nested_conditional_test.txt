@@ -1,0 +1,12 @@
+"Start " + "nesting"
+if true do
+    "First nesting"
+    a := PI * 3
+    if a < 5 do
+        a := a-3
+        if a <> E do
+            "DONETE"
+        fi
+    fi
+fi
+"==============================================="

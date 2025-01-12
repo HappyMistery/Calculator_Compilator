@@ -1,0 +1,4 @@
+a := 10
+if a >= 5 do
+    "a is" + " HIGHER OR EQUAL THAN" + 5
+fi

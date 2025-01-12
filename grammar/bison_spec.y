@@ -41,18 +41,19 @@
   int c3aOpCount = 1;
   int c3aLines = 0;
   int previousLines;
-  int totalc3aLines = 0;
 
-  int loopStart[8];
-  int loopJumpTo[8];
-  char loopTemp[8][16];
-  char loopCondTemp[8][16];
-  bool isOptionalLoop[8] = {[0 ... 7] = false}; /* Variable used for loops that have the possibility to not go into the loop's body (while, for x in range) */
-  char loopBuffer[8][512][256];
-  int loopBufferIndex[8] = {[0 ... 7] = 0};
+  int structStart[16];
+  int structJumpTo[16];
+  char structTemp[16][16];
+  char structCondTemp[16][16];
+  bool isOptionalStruct[16] = {[0 ... 7] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
+  char structBuffer[16][512][256];
+  int structBufferIndex[16] = {[0 ... 7] = 0};
   bool writtingBufferToFile = false;
 
+  int structIndex = -1;
   int loopIndex = -1;
+  int condIndex = -1;
 %}
 %define parse.error verbose
 %locations
@@ -83,7 +84,9 @@
                       LEN SUBSTR
                       OP CP OB CB
                       SHVAR
-                      REP WHL UNTL DO DONE
+                      IF FI
+                      DO
+                      REP WHL UNTL DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
@@ -96,24 +99,77 @@ calculator:
 ;
 
 stmnt_list:
-        stmnt ENDLINE stmnt_list
-    |   loop ENDLINE stmnt_list
-    |   ENDLINE stmnt_list
-    |   /* empty */     { /* Allow empty input */ }
+    stmnt ENDLINE stmnt_list
+    | cond ENDLINE stmnt_list
+    | loop ENDLINE stmnt_list
+    | ENDLINE stmnt_list
+    | /* empty */     { /* Allow empty input */ }
+;
+
+cond:
+    IF stmnt DO {
+                    if ($2.val_type == BOOL_TYPE) {
+                        structIndex++;
+                        condIndex++;
+                        structBufferIndex[structIndex] = 1;
+                        structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
+                        structStart[structIndex] = c3aLineNo - previousLines + 1;
+                        c3aLineNo++;
+                        isOptionalStruct[structIndex] = true;
+                        sprintf(structTemp[structIndex], "%s", $2.temp);
+                    } else {
+                        sprintf(err_mssg, "Structure for an if conditional is \"if <boolean_expression> do <statement_list> fi\"");
+                        free(to_str);
+                        custom_err_mssg(err_mssg);
+                    }
+                    err = false;
+                }
+    | FI    {
+                if (condIndex >= 0) {   /* If there is at least one conditional declared */
+                    c3aLineNo++;
+                    sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], c3aLineNo);
+
+                    int i;
+                    for (i = 0; i<structBufferIndex[structIndex]; i++) {
+                        if (structIndex > 0) {    /* If we are not treating the first structure, pass info from one buffer to the next */
+                            char temp[256];
+                            sprintf(temp, "%s", structBuffer[structIndex][i]);
+                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%s", temp);
+                        } else {    /* If we are treating the first structure, printf the whole loop body */
+                            writtingBufferToFile = true;
+                            sprintf(c3a_mssg, "%s", structBuffer[0][i]);
+                            c3a(c3a_mssg);
+                        }
+                    }
+
+                    if (structIndex == 0) {    /* If we are treating the first structure, we can start printing directly to file again */
+                        writtingBufferToFile = false;
+                    }
+                    c3aLineNo--;
+                    structIndex--;    /* Indicate one structure just closed */
+                    condIndex--;    /* Indicate one conditional just closed */
+                } else {    /* If there is no conditional declared, ERROR*/
+                    sprintf(err_mssg, "Cannot use the word 'fi' without a previous conditional declaration\"");
+                    free(to_str);
+                    custom_err_mssg(err_mssg);
+                }
+                err = false;
+            }
 ;
 
 loop:
     REP stmnt DO    {
                         if ($2.val_type == INT_TYPE) {
                             if ($2.ival > 0) {
+                                structIndex++;
                                 loopIndex++;
-                                loopBufferIndex[loopIndex] = 0;
-                                loopJumpTo[loopIndex] = c3aLineNo + 2;
-                                loopStart[loopIndex] = c3aLineNo + 2;
-                                isOptionalLoop[loopIndex] = false;
-                                sprintf(loopCondTemp[loopIndex], "%s", $2.temp);
-                                sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
-                                sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 0);
+                                structBufferIndex[structIndex] = 0;
+                                structJumpTo[structIndex] = c3aLineNo + 2;
+                                structStart[structIndex] = c3aLineNo + 2;
+                                isOptionalStruct[structIndex] = false;
+                                sprintf(structCondTemp[structIndex], "%s", $2.temp);
+                                sprintf(structTemp[structIndex], "$t%03d", c3aOpCount++);
+                                sprintf(c3a_mssg, "%s := %d", structTemp[structIndex], 0);
                                 c3a(c3a_mssg);
                             } else {
                                 sprintf(err_mssg, "Loop has to be repeated at least 1 time, not lower");
@@ -126,22 +182,24 @@ loop:
                         err = false;
                     }
     | DO    {
+                structIndex++;
                 loopIndex++;
-                loopBufferIndex[loopIndex] = 0;
-                loopJumpTo[loopIndex] = c3aLineNo + 1;
-                loopStart[loopIndex] = c3aLineNo + 1;
-                isOptionalLoop[loopIndex] = false;
+                structBufferIndex[structIndex] = 0;
+                structJumpTo[structIndex] = c3aLineNo + 1;
+                structStart[structIndex] = c3aLineNo + 1;
+                isOptionalStruct[structIndex] = false;
                 err = false;
             }
     | WHL stmnt DO  {
                         if ($2.val_type == BOOL_TYPE) {
+                            structIndex++;
                             loopIndex++;
-                            loopBufferIndex[loopIndex] = 1;
-                            loopJumpTo[loopIndex] = c3aLineNo - previousLines + 1;
-                            loopStart[loopIndex] = c3aLineNo - previousLines + 1;
+                            structBufferIndex[structIndex] = 1;
+                            structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
+                            structStart[structIndex] = c3aLineNo - previousLines + 1;
                             c3aLineNo++;
-                            isOptionalLoop[loopIndex] = true;
-                            sprintf(loopTemp[loopIndex], "%s", $2.temp);
+                            isOptionalStruct[structIndex] = true;
+                            sprintf(structTemp[structIndex], "%s", $2.temp);
                         } else {
                             sprintf(err_mssg, "Structure for a while loop is \"while <boolean_expression> do <statement_list> done\"");
                             free(to_str);
@@ -151,49 +209,50 @@ loop:
                     }
     | DONE  {   
                 if (loopIndex >= 0) {   /* If there is at least one loop declared */
-                    if (isOptionalLoop[loopIndex]) {    /* Loops that don't require at least one iteration (can skip the loop) need this line */
+                    if (isOptionalStruct[structIndex]) {    /* Loops that don't require at least one iteration (can skip the loop) need this line */
                         c3aLineNo++;
-                        sprintf(loopBuffer[loopIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - loopBufferIndex[loopIndex], loopTemp[loopIndex], c3aLineNo + 1);
+                        sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], c3aLineNo + 1);
                     }
 
                     int i;
-                    for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
-                        if (loopIndex > 0) {    /* If we are not treating the first loop, pass info from one buffer to the next */
+                    for (i = 0; i<structBufferIndex[structIndex]; i++) {
+                        if (structIndex > 0) {    /* If we are not treating the first structure, pass info from one buffer to the next */
                             char temp[256];
-                            sprintf(temp, "%s", loopBuffer[loopIndex][i]);
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
-                        } else {    /* If we are treating the first loop, printf the whole loop body */
+                            sprintf(temp, "%s", structBuffer[structIndex][i]);
+                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%s", temp);
+                        } else {    /* If we are treating the first structure, printf the whole loop body */
                             writtingBufferToFile = true;
-                            sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
+                            sprintf(c3a_mssg, "%s", structBuffer[0][i]);
                             c3a(c3a_mssg);
                         }
                     }
 
-                    if (!isOptionalLoop[loopIndex]) {
-                        if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add conditional lines */
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: %s := %s ADDI %d", c3aLineNo+1, loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                    if (!isOptionalStruct[structIndex]) {
+                        if (structIndex > 0) {    /* If we are not treating the first structure, calculate jump points and add conditional lines */
+                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: %s := %s ADDI %d", c3aLineNo+1, structTemp[structIndex], structTemp[structIndex], 1);
                             c3aLineNo++;
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: IF %s LTI %s GOTO %d", c3aLineNo+1, loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
+                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: IF %s LTI %s GOTO %d", c3aLineNo+1, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
                             c3aLineNo++;
-                        } else {    /* If we are treating the first loop, printf the extra conditional lines */
+                        } else {    /* If we are treating the first structure, printf the extra conditional lines */
                             c3aLineNo++;
-                            sprintf(c3a_mssg, "%d: %s := %s ADDI %d", c3aLineNo, loopTemp[loopIndex], loopTemp[loopIndex], 1);
+                            sprintf(c3a_mssg, "%d: %s := %s ADDI %d", c3aLineNo, structTemp[structIndex], structTemp[structIndex], 1);
                             c3a(c3a_mssg);
                             c3aLineNo++;
-                            sprintf(c3a_mssg, "%d: IF %s LTI %s GOTO %d", c3aLineNo, loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
+                            sprintf(c3a_mssg, "%d: IF %s LTI %s GOTO %d", c3aLineNo, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
                             c3a(c3a_mssg);
                             writtingBufferToFile = false;
                         }
                     } else {
-                        if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
-                            if (!isOptionalLoop[loopIndex-1]) loopStart[loopIndex]++;
-                            sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: GOTO %d", c3aLineNo, loopStart[loopIndex]);
-                        } else {    /* If we are treating the first loop, printf the extra jump line */
-                            sprintf(c3a_mssg, "%d: GOTO %d", c3aLineNo, loopStart[loopIndex]);
+                        if (structIndex > 0) {    /* If we are not treating the first structure, calculate jump points and add jump line */
+                            if (!isOptionalStruct[structIndex-1]) structStart[structIndex]++;
+                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: GOTO %d", c3aLineNo, structStart[structIndex]);
+                        } else {    /* If we are treating the first structure, printf the extra jump line */
+                            sprintf(c3a_mssg, "%d: GOTO %d", c3aLineNo, structStart[structIndex]);
                             c3a(c3a_mssg);
                             writtingBufferToFile = false;
                         }
                     }
+                    structIndex--;    /* Indicate one structure just closed */
                     loopIndex--;    /* Indicate one loop just closed */
                 } else {    /* If there is no loop declared, ERROR*/
                     sprintf(err_mssg, "Cannot use the word 'done' without a previous loop declaration\"");
@@ -201,32 +260,31 @@ loop:
                     custom_err_mssg(err_mssg);
                 }
                 err = false;
-                
             }
     | UNTL stmnt    {
-                        if (loopIndex >= 0) {   /* If there is at least one loop declared */
+                        if (structIndex >= 0) {   /* If there is at least one loop declared */
                             if ($2.val_type == BOOL_TYPE) {
-                                sprintf(loopTemp[loopIndex], "%s", $2.temp);
+                                sprintf(structTemp[structIndex], "%s", $2.temp);
                                 int i;
-                                for (i = 0; i<loopBufferIndex[loopIndex]; i++) {
-                                    if (loopIndex > 0) {    /* If we are not treating the first loop, pass info from one buffer to the next */
+                                for (i = 0; i<structBufferIndex[structIndex]; i++) {
+                                    if (structIndex > 0) {    /* If we are not treating the first loop, pass info from one buffer to the next */
                                         char temp[256];
-                                        sprintf(temp, "%s", loopBuffer[loopIndex][i]);
-                                        sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%s", temp);
+                                        sprintf(temp, "%s", structBuffer[structIndex][i]);
+                                        sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%s", temp);
                                     } else {    /* If we are treating the first loop, printf the whole loop body */
                                         writtingBufferToFile = true;
-                                        sprintf(c3a_mssg, "%s", loopBuffer[0][i]);
+                                        sprintf(c3a_mssg, "%s", structBuffer[0][i]);
                                         c3a(c3a_mssg);
                                     }
                                 }
-                                if (loopIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
-                                    sprintf(loopBuffer[loopIndex-1][loopBufferIndex[loopIndex-1]++], "%d: IF %s NE true GOTO %d", c3aLineNo, loopTemp[loopIndex], loopJumpTo[loopIndex]);
+                                if (structIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
+                                    sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: IF %s NE true GOTO %d", c3aLineNo, structTemp[structIndex], structJumpTo[structIndex]);
                                 } else {    /* If we are treating the first loop, printf the extra jump line */
-                                    sprintf(c3a_mssg, "%d: IF %s NE true GOTO %d", c3aLineNo, loopTemp[loopIndex], loopJumpTo[loopIndex]);
+                                    sprintf(c3a_mssg, "%d: IF %s NE true GOTO %d", c3aLineNo, structTemp[structIndex], structJumpTo[structIndex]);
                                     c3a(c3a_mssg);
                                     writtingBufferToFile = false;
                                 }
-                                loopIndex--;    /* Indicate one loop just closed */
+                                structIndex--;    /* Indicate one loop just closed */
                             } else {
                                 sprintf(err_mssg, "Structure for a do until loop is \"do <statement_list> until <boolean_expression> \"");
                                 free(to_str);
@@ -725,16 +783,16 @@ expr2:
                             sprintf($$.temp, "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %g", $$.temp, $1.fval); /* Initialize value to multiply over itself */
                             c3a(c3a_mssg);
-                            sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 1); /* Start from iteration 1 instead of 0 */
+                            sprintf(structTemp[structIndex], "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", structTemp[structIndex], 1); /* Start from iteration 1 instead of 0 */
                             c3a(c3a_mssg);
-                            loopJumpTo[loopIndex] = c3aLineNo + 1;
-                            sprintf(loopCondTemp[loopIndex], "%d", flooredVal);
+                            structJumpTo[structIndex] = c3aLineNo + 1;
+                            sprintf(structCondTemp[structIndex], "%d", flooredVal);
                             sprintf(c3a_mssg, "%s := %s MULF %g", $$.temp, $$.temp, $1.fval); /* Multiply value over itslef */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1); /* Keep iterating */
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", structTemp[structIndex], structTemp[structIndex], 1); /* Keep iterating */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
                             c3a(c3a_mssg);
                             if ($3.val_type == FLOAT_TYPE) {
                                 float floatingExp = $3.fval - flooredVal;
@@ -748,16 +806,16 @@ expr2:
                             sprintf($$.temp, "$t%03d", c3aOpCount++);
                             sprintf(c3a_mssg, "%s := %d", $$.temp, $1.ival); /* Initialize value to multiply over itself */
                             c3a(c3a_mssg);
-                            sprintf(loopTemp[loopIndex], "$t%03d", c3aOpCount++);
-                            sprintf(c3a_mssg, "%s := %d", loopTemp[loopIndex], 1); /* Start from iteration 1 instead of 0 */
+                            sprintf(structTemp[structIndex], "$t%03d", c3aOpCount++);
+                            sprintf(c3a_mssg, "%s := %d", structTemp[structIndex], 1); /* Start from iteration 1 instead of 0 */
                             c3a(c3a_mssg);
-                            loopJumpTo[loopIndex] = c3aLineNo + 1;
-                            sprintf(loopCondTemp[loopIndex], "%d", $3.ival);
+                            structJumpTo[structIndex] = c3aLineNo + 1;
+                            sprintf(structCondTemp[structIndex], "%d", $3.ival);
                             sprintf(c3a_mssg, "%s := %s MULI %d", $$.temp, $$.temp, $1.ival); /* Multiply value over itslef */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "%s := %s ADDI %d", loopTemp[loopIndex], loopTemp[loopIndex], 1); /* Keep iterating */
+                            sprintf(c3a_mssg, "%s := %s ADDI %d", structTemp[structIndex], structTemp[structIndex], 1); /* Keep iterating */
                             c3a(c3a_mssg);
-                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", loopTemp[loopIndex], loopCondTemp[loopIndex], loopJumpTo[loopIndex]);
+                            sprintf(c3a_mssg, "IF %s LTI %s GOTO %d", structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
                             c3a(c3a_mssg);                        
                         }
                     }
@@ -1145,13 +1203,12 @@ void c3a(const char *s) {
         }
     }
     c3aLines++;
-    totalc3aLines++;
-    if (loopIndex >= 0 && !writtingBufferToFile) {
+    if (structIndex >= 0 && !writtingBufferToFile) {
         c3aLineNo++;
-        sprintf(loopBuffer[loopIndex][loopBufferIndex[loopIndex]], "%d: %s", c3aLineNo, s);
-        loopBufferIndex[loopIndex]++;
+        sprintf(structBuffer[structIndex][structBufferIndex[structIndex]], "%d: %s", c3aLineNo, s);
+        structBufferIndex[structIndex]++;
     } else {
-        if (loopIndex == 0) { 
+        if (structIndex == 0) { 
             fprintf(out3ac, "%s\n", s);
             fflush(out3ac);
         } else {

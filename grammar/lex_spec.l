@@ -67,10 +67,14 @@ CAST I2F|I2B|F2I|F2B|B2I|B2F|B2C|C2I|C2F|C2B
 
 "showVars()"    { append_to_buffer(yytext); return SHVAR; }
 
+"if"        { append_to_buffer(yytext); return IF; }
+"fi"        { append_to_buffer(yytext); return FI; }
+
+"do"        { append_to_buffer(yytext); return DO; }
+
 "repeat"    { append_to_buffer(yytext); return REP; }
 "while"     { append_to_buffer(yytext); return WHL; }
 "until"     { append_to_buffer(yytext); return UNTL; }
-"do"        { append_to_buffer(yytext); return DO; }
 "done"      { append_to_buffer(yytext); return DONE; }
 
 {BASE}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return BASE; }
