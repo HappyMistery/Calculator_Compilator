@@ -7,6 +7,12 @@ if true do
         if a <> E do
             "DONETE"
         fi
+    else
+        if a == (PI*3) do
+            "O" + "BVI" + 0
+        else 
+            "impossible"
+        fi
     fi
 fi
 "==============================================="

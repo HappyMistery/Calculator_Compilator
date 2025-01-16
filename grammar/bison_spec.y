@@ -46,9 +46,12 @@
   int structJumpTo[16];
   char structTemp[16][16];
   char structCondTemp[16][16];
-  bool isOptionalStruct[16] = {[0 ... 7] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
+  bool isOptionalStruct[16] = {[0 ... 15] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
+  bool isElseConditional[16] = {[0 ... 15] = false};
+  int elseLine[16];
+  int elseJump[16];
   char structBuffer[16][512][256];
-  int structBufferIndex[16] = {[0 ... 7] = 0};
+  int structBufferIndex[16] = {[0 ... 15] = 0};
   bool writtingBufferToFile = false;
 
   int structIndex = -1;
@@ -84,7 +87,7 @@
                       LEN SUBSTR
                       OP CP OB CB
                       SHVAR
-                      IF FI
+                      IF ELSE FI
                       DO
                       REP WHL UNTL DONE
 
@@ -116,6 +119,7 @@ cond:
                         structStart[structIndex] = c3aLineNo - previousLines + 1;
                         c3aLineNo++;
                         isOptionalStruct[structIndex] = true;
+                        isElseConditional[structIndex] = false;
                         sprintf(structTemp[structIndex], "%s", $2.temp);
                     } else {
                         sprintf(err_mssg, "Structure for an if conditional is \"if <boolean_expression> do <statement_list> fi\"");
@@ -124,10 +128,27 @@ cond:
                     }
                     err = false;
                 }
+    | ELSE  {
+                if (condIndex >= 0) {   /* If there is at least one conditional declared */
+                    isElseConditional[structIndex] = true;
+                    elseLine[structIndex] = c3aLineNo++;
+                    elseJump[structIndex] = structBufferIndex[structIndex]++; /* We leaVe space in the buffer to store the GOTO label for the ending of the if statement, in order to jump over the else's body */
+                } else {    /* If there is no conditional declared, ERROR*/
+                    sprintf(err_mssg, "Cannot use the word 'else' without a previous conditional declaration\"");
+                    free(to_str);
+                    custom_err_mssg(err_mssg);
+                }
+                err = false;
+            }
     | FI    {
                 if (condIndex >= 0) {   /* If there is at least one conditional declared */
                     c3aLineNo++;
-                    sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], c3aLineNo);
+                    if (isElseConditional[structIndex]) {
+                        sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], elseLine[structIndex]+2);
+                        sprintf(structBuffer[structIndex][elseJump[structIndex]], "%d: GOTO %d", elseLine[structIndex]+1, c3aLineNo);
+                    } else {
+                        sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], c3aLineNo);
+                    }
 
                     int i;
                     for (i = 0; i<structBufferIndex[structIndex]; i++) {
