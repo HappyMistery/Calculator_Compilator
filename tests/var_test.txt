@@ -12,6 +12,7 @@ arr[2] := d+e
 arr[0] := PI * 45    //141.372
 arr[b] := b ** E //522.735
 arr[1] := f  //true
+arr[arr[12] - b] := not true
 
 // Operations with variables
 c + b - a   //25.1
@@ -25,5 +26,5 @@ substr((d + e) 1 3) + "--" + a  //yGi--3.7
 a + b * (c - 2) / a     //49.1054
 a > b or arr[1] and NOT (c < 10)     //true
 f and b > c or not (a == 3.7)   //false
-d + " - " + e + ": " + c + a    //My - Girlfriend: 18.83.7
+d + " - " + e + ": " + c + a + arr[4*2]    //My - Girlfriend: 18.83.7false
 SUBSTR((d + e) 1 4) + (c - b)   //yGir8.8

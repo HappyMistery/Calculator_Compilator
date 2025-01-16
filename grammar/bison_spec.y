@@ -23,6 +23,7 @@
 
   int yylex(void);
   void yyerror(const char *s);
+  char* strdup(const char* s);
   int contains(char *vars[], int size, const char *value);
   void cast_vals_to_flt(value_info *op1, value_info *op2, bool store3ac);
   char* switch_bases(value_info *val, base base);
@@ -32,7 +33,7 @@
   void buildTable(char *vars[], int var_index);
 
   char err_mssg[256];
-  char c3a_mssg[256];
+  char c3a_mssg[512];
   bool err = false;
   char *to_str;
   char *vars[256];
@@ -48,8 +49,8 @@
   char structCondTemp[16][16];
   bool isOptionalStruct[16] = {[0 ... 15] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
   bool isElseConditional[16] = {[0 ... 15] = false};
-  int elseLine[16];
-  int elseJump[16];
+  int elseLine[16]; /* Variable used to store the 3ac line where the else's body starts */
+  int jumpElse[16]; /* Variable used to store the position of the buffer where the label "GOTO" will be stored in order to jump the else's body when we enter and finish an if body */
   char structBuffer[16][512][256];
   int structBufferIndex[16] = {[0 ... 15] = 0};
   bool writtingBufferToFile = false;
@@ -87,9 +88,8 @@
                       LEN SUBSTR
                       OP CP OB CB
                       SHVAR
-                      IF ELSE FI
-                      DO
-                      REP WHL UNTL DONE
+                      IF THEN ELSE FI
+                      REP WHL DO UNTL DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
@@ -110,29 +110,29 @@ stmnt_list:
 ;
 
 cond:
-    IF stmnt DO {
-                    if ($2.val_type == BOOL_TYPE) {
-                        structIndex++;
-                        condIndex++;
-                        structBufferIndex[structIndex] = 1;
-                        structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
-                        structStart[structIndex] = c3aLineNo - previousLines + 1;
-                        c3aLineNo++;
-                        isOptionalStruct[structIndex] = true;
-                        isElseConditional[structIndex] = false;
-                        sprintf(structTemp[structIndex], "%s", $2.temp);
-                    } else {
-                        sprintf(err_mssg, "Structure for an if conditional is \"if <boolean_expression> do <statement_list> fi\"");
-                        free(to_str);
-                        custom_err_mssg(err_mssg);
+    IF stmnt THEN   {
+                        if ($2.val_type == BOOL_TYPE) {
+                            structIndex++;
+                            condIndex++;
+                            structBufferIndex[structIndex] = 1;
+                            structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
+                            structStart[structIndex] = c3aLineNo - previousLines + 1;
+                            c3aLineNo++;
+                            isOptionalStruct[structIndex] = true;
+                            isElseConditional[structIndex] = false;
+                            sprintf(structTemp[structIndex], "%s", $2.temp);
+                        } else {
+                            sprintf(err_mssg, "Structure for an if conditional is \"if <boolean_expression> do <statement_list> fi\"");
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                        err = false;
                     }
-                    err = false;
-                }
     | ELSE  {
                 if (condIndex >= 0) {   /* If there is at least one conditional declared */
                     isElseConditional[structIndex] = true;
                     elseLine[structIndex] = c3aLineNo++;
-                    elseJump[structIndex] = structBufferIndex[structIndex]++; /* We leaVe space in the buffer to store the GOTO label for the ending of the if statement, in order to jump over the else's body */
+                    jumpElse[structIndex] = structBufferIndex[structIndex]++; /* We leaVe space in the buffer to store the GOTO label for the ending of the if statement, in order to jump over the else's body */
                 } else {    /* If there is no conditional declared, ERROR*/
                     sprintf(err_mssg, "Cannot use the word 'else' without a previous conditional declaration\"");
                     free(to_str);
@@ -145,7 +145,7 @@ cond:
                     c3aLineNo++;
                     if (isElseConditional[structIndex]) {
                         sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], elseLine[structIndex]+2);
-                        sprintf(structBuffer[structIndex][elseJump[structIndex]], "%d: GOTO %d", elseLine[structIndex]+1, c3aLineNo);
+                        sprintf(structBuffer[structIndex][jumpElse[structIndex]], "%d: GOTO %d", elseLine[structIndex]+1, c3aLineNo);
                     } else {
                         sprintf(structBuffer[structIndex][0], "%d: IF %s NE true GOTO %d", c3aLineNo - structBufferIndex[structIndex], structTemp[structIndex], c3aLineNo);
                     }
@@ -298,6 +298,7 @@ loop:
                                         c3a(c3a_mssg);
                                     }
                                 }
+                                c3aLineNo++;
                                 if (structIndex > 0) {    /* If we are not treating the first loop, calculate jump points and add jump line */
                                     sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: IF %s NE true GOTO %d", c3aLineNo, structTemp[structIndex], structJumpTo[structIndex]);
                                 } else {    /* If we are treating the first loop, printf the extra jump line */
@@ -307,7 +308,7 @@ loop:
                                 }
                                 structIndex--;    /* Indicate one loop just closed */
                             } else {
-                                sprintf(err_mssg, "Structure for a do until loop is \"do <statement_list> until <boolean_expression> \"");
+                                sprintf(err_mssg, "Structure for a do until loop is \"do <statement_list> until <boolean_expression>\"");
                                 free(to_str);
                                 custom_err_mssg(err_mssg);
                             }
@@ -369,7 +370,9 @@ stmnt:
                                         }
                                         if($3.val_type == INT_TYPE) {
                                             char* name = $1.name;
+                                            char* tempName = strdup($1.name);
                                             char arrayName[128];
+                                            char* tempTemp = strdup($3.temp);
                                             sprintf(arrayName, "%s[0]", name);
                                             int result = contains(vars, var_index+1, arrayName);
                                             if (result == 0) { /* If there is no array with this name, create placeholders for all of the elements of the array */
@@ -413,8 +416,8 @@ stmnt:
                                                     $1.id_val.sval = $6.sval;
                                                     $$.sval = $6.sval;
                                                 }
-                                                sprintf($$.temp, "%s", $1.name);
-                                                sprintf(c3a_mssg, "%s := %s", $1.name, $6.temp);
+                                                sprintf($$.temp, "%s[%s]", tempName, tempTemp);
+                                                sprintf(c3a_mssg, "%s := %s", $$.temp, $6.temp);
                                                 c3a(c3a_mssg);
                                                 sym_enter($1.name, &$1); /* Update the desired element in the array */
                                             }
@@ -463,9 +466,18 @@ stmnt:
                             }
     | ID OB expr CB ASSIGN expr BASE    {
                                             if(!err) {
+                                                if ($3.val_type == FLOAT_TYPE && (($3.fval - floor($3.fval) < 0.000001) && ($3.fval - floor($3.fval) > -0.000001))) {
+                                                    $3.ival = floor($3.fval);
+                                                    $3.val_type = INT_TYPE;
+                                                    sprintf(c3a_mssg, "$t%03d := F2I %s", c3aOpCount++, $3.temp);
+                                                    sprintf($3.temp, "$t%03d", c3aOpCount);
+                                                    c3a(c3a_mssg);
+                                                }
                                                 if($3.val_type == INT_TYPE) {
                                                     char* name = $1.name;
+                                                    char* tempName = strdup($1.name);
                                                     char arrayName[128];
+                                                    char* tempTemp = strdup($3.temp);
                                                     sprintf(arrayName, "%s[0]", name);
                                                     int result = contains(vars, var_index+1, arrayName);
                                                     if (result == 0) { /* If there is no array with this name, create placeholders for all of the elements of the array */
@@ -505,7 +517,7 @@ stmnt:
                                                             c3a(c3a_mssg);
                                                             $1.id_val.ival = $6.ival;
                                                             $$.ival = $6.ival;
-                                                            sprintf($$.temp, "%s", $1.name);
+                                                            sprintf($$.temp, "%s[%s]", tempName, tempTemp);
                                                             sym_enter($1.name, &$1);
                                                             free(to_str);
                                                         }
@@ -1128,8 +1140,17 @@ expr_term:
                 }
             }
     | ID OB expr CB {
+                        if ($3.val_type == FLOAT_TYPE && (($3.fval - floor($3.fval) < 0.000001) && ($3.fval - floor($3.fval) > -0.000001))) {
+                            $3.ival = floor($3.fval);
+                            $3.val_type = INT_TYPE;
+                            sprintf(c3a_mssg, "$t%03d := F2I %s", c3aOpCount++, $3.temp);
+                            sprintf($3.temp, "$t%03d", c3aOpCount);
+                            c3a(c3a_mssg);
+                        }
                         if ($3.val_type == INT_TYPE) {
                             char arrayName[128];
+                            char *tempTemp = strdup($3.temp);
+                            char *tempName = strdup($1.name);
                             sprintf(arrayName, "%s[%d]", $1.name, $3.ival);
                             int result = sym_lookup(arrayName, &$1);
                             if(result == 0) {
@@ -1138,7 +1159,7 @@ expr_term:
                                 else if($1.id_val.val_type == FLOAT_TYPE) $$.fval = $1.id_val.fval;
                                 else if($1.id_val.val_type == BOOL_TYPE) $$.bval = $1.id_val.bval;
                                 else if($1.id_val.val_type == STRING_TYPE) $$.sval = $1.id_val.sval;
-                                sprintf($$.temp, "%s[%d]", $1.name, $3.ival);
+                                sprintf($$.temp, "%s[%s]", tempName, tempTemp);
                             }
                             else {
                                 sprintf(err_mssg, "Array element '%s' does not exist", arrayName); 

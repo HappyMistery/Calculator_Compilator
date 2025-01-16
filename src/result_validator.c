@@ -158,6 +158,7 @@ int validate_results(const char *input_file, const char *output_file) {
         { "arr[0] := PI * 45", "[Float] arr[0] = 141.372"},
         { "arr[b] := b ** E", "[Float] arr[10] = 522.735"},
         { "arr[1] := f", "[Boolean] arr[1] = true"},
+        { "arr[arr[12] - b] := not true", "[Boolean] arr[8] = false"},
         { "c + b - a", "[Float] 25.1"},
         { "a * b / c", "[Float] 1.96809"},
         { "d + " " + e + \" is cool\"", "[String] My Girlfriend is cool"},
@@ -169,7 +170,7 @@ int validate_results(const char *input_file, const char *output_file) {
         { "a + b * (c - 2) / a", "[Float] 49.1054"},
         { "a > b or arr[1] and NOT (c < 10)", "[Boolean] true"},
         { "f and b > c or not (a == 3.7)", "[Boolean] false"},
-        { "d + \" - \" + e + \": \" + c + a", "[String] My - Girlfriend: 18.83.7"},
+        { "d + \" - \" + e + \": \" + c + a + arr[4*2]", "[String] My - Girlfriend: 18.83.7false"},
         { "SUBSTR((d + e) 1 4) + (c - b)", "[String] yGir8.8"},
     };
 

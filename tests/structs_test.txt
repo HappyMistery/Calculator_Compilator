@@ -1,0 +1,31 @@
+arr[20] := 20
+i := 0
+repeat 21 do
+    if i == 20 then
+        "ARRAY INITIALIZED"
+    else
+        arr[i] := i
+    fi
+    i := i+1
+done 
+"==============================================="
+do 
+    "element " + i + " is: " + arr[i]
+    i := i-1
+    if i == 0 then
+        "Printing is done"
+    fi
+until i == 0
+"==============================================="
+if (arr[i] < 10) then
+    while i < 10 do
+        if true then
+            "printing some more"
+        fi
+        i := i * 2
+    done
+else
+    repeat 2 do
+        "xd"
+    done
+fi

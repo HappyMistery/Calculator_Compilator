@@ -1,10 +1,10 @@
 a := 10
-if a >= 5 do
+if a >= 5 then
     "a is" + " HIGHER OR EQUAL THAN" + 5
 fi
 "==============================================="
 b := true
-if b do
+if b then
     "b is " + (true or false and 1 > 5)
 else
     "b is not " + SUBSTR("untrue" 2 4)

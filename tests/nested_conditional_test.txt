@@ -1,14 +1,14 @@
 "Start " + "nesting"
-if true do
+if true then
     "First nesting"
     a := PI * 3
-    if a < 5 do
+    if a < 5 then
         a := a-3
-        if a <> E do
+        if a <> E then
             "DONETE"
         fi
     else
-        if a == (PI*3) do
+        if a == (PI*3) then
             "O" + "BVI" + 0
         else 
             "impossible"
