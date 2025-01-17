@@ -18,3 +18,5 @@ vector[true] := "something" //Arrays can only be accessed using 'Integer', not '
 arr[5]  //Array element 'arr[5]' does not exist
 xyz[4] := 3.5
 xyz[7] := true  //Array 'xyz[]' cannot be resized to accept element 'xyz[7]'
+false == 3  //Equal (==) operator for type 'Boolean' can only operate against another value of type 'Boolean'
+PI <> "PI"  //Not equal (<>) operator for type 'String' can only operate against another value of type 'String'

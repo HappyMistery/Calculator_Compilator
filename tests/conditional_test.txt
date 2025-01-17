@@ -9,3 +9,6 @@ if b then
 else
     "b is not " + SUBSTR("untrue" 2 4)
 fi
+"==============================================="
+switch a
+    case 0

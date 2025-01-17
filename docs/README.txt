@@ -117,36 +117,41 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
     7.  En els casos en els que s'ha de fer una operació entre un enter i un 
         real, es casteja el valor de l'enter a real de manera implícita per 
         tal de facilitar la seva operació (línies 422, 503, 649, 763, ...).
+    
+    8.  Els operadors Equal (==) i Not equal (<>) poden fer-se servir per a tots
+        els tipus de dades, amb la condició de que els booleans només poden
+        ser comparats amb booleans, i les strings només poden ser comparades
+        amb strings.
 
-    8.  Per a crear una taula unidimensional (array) s'ha d'assignar un valor 
+    9.  Per a crear una taula unidimensional (array) s'ha d'assignar un valor 
         a l'última entrada de la taula, és a dir, si es vol crear un vector de 
         x elements es definirà tal que 'arr_name[x-1] := 0'. D'aquesta manera es
         creen x entrades a la symtable sense cap valor ni tipus, llestes per a 
         ser omplertes.
 
-    9.  Les taules unidimensionals no tenen tipus. Poden existir taules que 
+    10.  Les taules unidimensionals no tenen tipus. Poden existir taules que 
         continguin elements enters, reals, booleans i strings al mateix temps.
 
-    10. Un cop creada una taula unidimensional, no es pot modificar la seva mida,
+    11. Un cop creada una taula unidimensional, no es pot modificar la seva mida,
         és a dir, si es crea una taula amb la següent comanda:
                                 "noms[5] := "Ricardo""
         , l'element noms[6] no existeix i si en un futur s'hi intenta assignar 
         algún valor, es notificarà a l'usuari amb un missatge d'error.
 
-    11. Les taules unidimensionals poden ser indexades amb operacions reals sempre
+    12. Les taules unidimensionals poden ser indexades amb operacions reals sempre
         que el resultat d'aquestes operacions sigui un valor enter.
         L'instrucció "abc[10/2] := true" és totalment vàlida.
 
-    12. L'operació potència real té en compte la part decimal de l'exponent (en
+    13. L'operació potència real té en compte la part decimal de l'exponent (en
         cas d'haver-n'hi. Línies 593-598).
     
-    13. Els casts explícits entre tipus de dades interpreten que han de castejar 
+    14. Els casts explícits entre tipus de dades interpreten que han de castejar 
         l'expressió immediatament següent i no més, o en el seu defecte, tot el que 
         es trobi dins del parèntesi immediatament següent (igual que sin(), cos() i tan()).
 
-    14. Poden haver-hi fins a 8 bucles aniuats (tot i que es recomana no tenir-los ...).
+    15. Poden haver-hi fins a 8 bucles aniuats (tot i que es recomana no tenir-los ...).
 
-    15. Un bucle pot tenir fins a 512 instruccions en el seu interior.
+    16. Un bucle pot tenir fins a 512 instruccions en el seu interior.
 
 ┌──────────────────────────────────────┐
 │                SYMTAB:               │

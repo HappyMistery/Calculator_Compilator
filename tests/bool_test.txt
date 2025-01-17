@@ -14,3 +14,7 @@ true and NOT true or not true   //false
 #Mixed boolean operations
 (3 > 1.75) AND true or false    //true
 (not (PI <> PI) OR false) and (true and NOT(false and (4>=5)))  //true
+
+//Comparations with other data types
+"hola" == "hola"    //true
+true <> I2B 0   //true

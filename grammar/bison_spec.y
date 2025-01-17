@@ -43,16 +43,16 @@
   int c3aLines = 0;
   int previousLines;
 
-  int structStart[16];
-  int structJumpTo[16];
-  char structTemp[16][16];
-  char structCondTemp[16][16];
-  bool isOptionalStruct[16] = {[0 ... 15] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
-  bool isElseConditional[16] = {[0 ... 15] = false};
-  int elseLine[16]; /* Variable used to store the 3ac line where the else's body starts */
-  int jumpElse[16]; /* Variable used to store the position of the buffer where the label "GOTO" will be stored in order to jump the else's body when we enter and finish an if body */
-  char structBuffer[16][512][256];
-  int structBufferIndex[16] = {[0 ... 15] = 0};
+  int structStart[32];
+  int structJumpTo[32];
+  char structTemp[32][128];
+  char structCondTemp[32][128];
+  bool isOptionalStruct[32] = {[0 ... 31] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
+  bool isElseConditional[32] = {[0 ... 31] = false};
+  int elseLine[32]; /* Variable used to store the 3ac line where the else's body starts */
+  int jumpElse[32]; /* Variable used to store the position of the buffer where the label "GOTO" will be stored in order to jump the else's body when we enter and finish an if body */
+  char structBuffer[32][512][256];
+  int structBufferIndex[32] = {[0 ... 31] = 0};
   bool writtingBufferToFile = false;
 
   int structIndex = -1;
@@ -88,7 +88,7 @@
                       LEN SUBSTR
                       OP CP OB CB
                       SHVAR
-                      IF THEN ELSE FI
+                      IF THEN ELSE FI SW FSW
                       REP WHL DO UNTL DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
@@ -140,6 +140,18 @@ cond:
                 }
                 err = false;
             }
+    | SW stmnt  {
+                    structIndex++;
+                    condIndex++;
+                    structBufferIndex[structIndex] = 1;
+                    structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
+                    structStart[structIndex] = c3aLineNo - previousLines + 1;
+                    c3aLineNo++;
+                    isOptionalStruct[structIndex] = true;
+                    isElseConditional[structIndex] = false;
+                    sprintf(structTemp[structIndex], "%s", $2.temp);
+                    err = false;
+                }
     | FI    {
                 if (condIndex >= 0) {   /* If there is at least one conditional declared */
                     c3aLineNo++;
@@ -1066,26 +1078,46 @@ expr4:
                                     c3a(c3a_mssg);
                                 }
                             }
-    | expr4 EQU expr_term   { /* Booleans and Strings cannot use the equal operator */
-                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                    custom_err_mssg("Equal (==) operator cannot be applied to type 'Boolean'");
-                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                    custom_err_mssg("Equal (==) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3, false); 
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.fval == $3.fval;
+    | expr4 EQU expr_term   { 
+                                if ($1.val_type == STRING_TYPE && $3.val_type == STRING_TYPE) {
+                                    $$.val_type = BOOL_TYPE;
+                                    $$.bval = strcmp($1.sval, $3.sval) == 0;
+                                } 
+                                else if (($1.val_type == STRING_TYPE && $3.val_type != STRING_TYPE) || ($1.val_type != STRING_TYPE && $3.val_type == STRING_TYPE)) 
+                                    custom_err_mssg("Equal (==) operator for type 'String' can only operate against another value of type 'String'");
+                                else if ($1.val_type == BOOL_TYPE && $3.val_type == BOOL_TYPE) {
+                                    $$.val_type = BOOL_TYPE;
+                                    $$.bval = $1.bval == $3.bval;
+                                } 
+                                else if (($1.val_type == BOOL_TYPE && $3.val_type != BOOL_TYPE) || ($1.val_type != BOOL_TYPE && $3.val_type == BOOL_TYPE)) 
+                                    custom_err_mssg("Equal (==) operator for type 'Boolean' can only operate against another value of type 'Boolean'");
+                                else {
+                                    cast_vals_to_flt(&$1, &$3, false); 
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.fval == $3.fval;
+                                }
                                 sprintf($$.temp, "$t%03d", c3aOpCount++);
                                 sprintf(c3a_mssg, "%s := %s EQ %s", $$.temp, $1.temp, $3.temp);
                                 c3a(c3a_mssg);
                             }
-    | expr4 NEQ expr_term   { /* Booleans and Strings cannot use the not equal operator */
-                                if ($1.val_type == BOOL_TYPE || $3.val_type == BOOL_TYPE) 
-                                    custom_err_mssg("Not equal (<>) operator cannot be applied to type 'Boolean'");
-                                else if ($1.val_type == STRING_TYPE || $3.val_type == STRING_TYPE) 
-                                    custom_err_mssg("Not equal (<>) operator cannot be applied to type 'String'");
-                                cast_vals_to_flt(&$1, &$3, false); 
-                                $$.val_type = BOOL_TYPE; 
-                                $$.bval = $1.fval != $3.fval;
+    | expr4 NEQ expr_term   { 
+                                if ($1.val_type == STRING_TYPE && $3.val_type == STRING_TYPE) {
+                                    $$.val_type = BOOL_TYPE;
+                                    $$.bval = strcmp($1.sval, $3.sval) != 0;
+                                } 
+                                else if (($1.val_type == STRING_TYPE && $3.val_type != STRING_TYPE) || ($1.val_type != STRING_TYPE && $3.val_type == STRING_TYPE)) 
+                                    custom_err_mssg("Not equal (<>) operator for type 'String' can only operate against another value of type 'String'");
+                                else if ($1.val_type == BOOL_TYPE && $3.val_type == BOOL_TYPE) {
+                                    $$.val_type = BOOL_TYPE;
+                                    $$.bval = $1.bval != $3.bval;
+                                } 
+                                else if (($1.val_type == BOOL_TYPE && $3.val_type != BOOL_TYPE) || ($1.val_type != BOOL_TYPE && $3.val_type == BOOL_TYPE)) 
+                                    custom_err_mssg("Not equal (<>) operator for type 'Boolean' can only operate against another value of type 'Boolean'");
+                                else {
+                                    cast_vals_to_flt(&$1, &$3, false); 
+                                    $$.val_type = BOOL_TYPE; 
+                                    $$.bval = $1.fval != $3.fval;
+                                }
                                 sprintf($$.temp, "$t%03d", c3aOpCount++);
                                 sprintf(c3a_mssg, "%s := %s NE %s", $$.temp, $1.temp, $3.temp);
                                 c3a(c3a_mssg);

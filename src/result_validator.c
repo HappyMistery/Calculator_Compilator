@@ -118,6 +118,8 @@ int validate_results(const char *input_file, const char *output_file) {
         {"(cos(0)) <> 1", "[Boolean] false"},
         {"(3 > 1.75) AND true or false", "[Boolean] true"},
         {"(not (PI <> PI) OR false) and (true and NOT(false and (4>=5)))", "[Boolean] true"},
+        {"\"hola\" == \"hola\"", "[Boolean] true"},
+        {"true <> I2B 0", "[Boolean] true"},
     };
 
     const struct {
@@ -195,7 +197,9 @@ int validate_results(const char *input_file, const char *output_file) {
         {"a", " Variable 'a' does not exist"},
         {"vector[true] := \"something\"", " Arrays can only be accessed using 'Integer', not 'Boolean'"},
         {"arr[5]", " Array element 'arr[5]' does not exist"},
-        {"xyz[7] := true",  " Array 'xyz[]' cannot be resized to accept element 'xyz[7]'"}
+        {"xyz[7] := true",  " Array 'xyz[]' cannot be resized to accept element 'xyz[7]'"},
+        {"false == 3", " Equal (==) operator for type 'Boolean' can only operate against another value of type 'Boolean'"},
+        {"PI <> \"PI\"", " Not equal (<>) operator for type 'String' can only operate against another value of type 'String'"}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {
