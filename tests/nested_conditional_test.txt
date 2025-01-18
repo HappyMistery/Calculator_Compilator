@@ -16,3 +16,37 @@ if true then
     fi
 fi
 "==============================================="
+b := "Red"
+c := "Blue"
+d := sin(PI)
+switch b+c
+    case "YellowRed":
+        if d > (tan(PI)/E) then
+            d := -1
+        fi
+        "WebiWabo"
+        break
+    case "GreenBlue":
+        e[5] := "Green" + c + " " + true
+        e[0] := true
+        if e[0] <> true or e[5] == "GreenBlue true" then
+            "AAAAAAAAA"
+        else 
+            "BBBBBBBBB"
+            e[1] := true and (1>0)
+        fi
+        break
+    default:
+        "Random ah Color combination"
+        if true then
+            switch b
+                case "Red":
+                    "It is RED"
+                    break
+                default:
+                    "It is not RED"
+                    break
+            fswitch  
+        fi
+        break
+fswitch

@@ -1012,7 +1012,7 @@ expr3:
                         custom_err_mssg("tan() cannot take a type 'String' as a parameter");
                     else {
                         cast_vals_to_flt(&$2, NULL, true);  /* Cast the values to float for easier validations */
-                        if(cos($2.fval) < 0.000001) 
+                        if(cos($2.fval) < 0.000001 && cos($2.fval) > -0.000001) 
                             custom_err_mssg("Indefinition error");  /* tan(x) == sin(x)/cos(x) so if cos(x) == 0, we would be dividing by 0 */
                         else { 
                             $$.val_type = FLOAT_TYPE; 
@@ -1238,7 +1238,7 @@ expr_term:
     | STRING    {
                     $$.val_type = STRING_TYPE; 
                     $$.sval = $1;
-                    sprintf($$.temp, "%s", $1);
+                    sprintf($$.temp, "\"%s\"", $1);
                 }
     | PI    {  
                 $$.val_type = FLOAT_TYPE; 
