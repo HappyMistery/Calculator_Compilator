@@ -149,9 +149,14 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         l'expressió immediatament següent i no més, o en el seu defecte, tot el que 
         es trobi dins del parèntesi immediatament següent (igual que sin(), cos() i tan()).
 
-    15. Poden haver-hi fins a 8 bucles aniuats (tot i que es recomana no tenir-los ...).
+    15. Poden haver-hi fins a 32 estructures (bucles i condicionals) aniuades (tot i que 
+        es recomana no tenir-los ...).
 
-    16. Un bucle pot tenir fins a 512 instruccions en el seu interior.
+    16. Una estructura (bucles o condicionals) pot tenir fins a 512 instruccions en el seu interior.
+
+    17. Un switch pot tenir fins a 31 casos (case) juntament amb un default obligatori. 
+        És a dir, pot tenir des de 0 casos fins a 31 casos, però sempre ha d'haver-hi 
+        el cas default.
 
 ┌──────────────────────────────────────┐
 │                SYMTAB:               │
