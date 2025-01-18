@@ -51,6 +51,14 @@
   bool isElseConditional[32] = {[0 ... 31] = false};
   int elseLine[32]; /* Variable used to store the 3ac line where the else's body starts */
   int jumpElse[32]; /* Variable used to store the position of the buffer where the label "GOTO" will be stored in order to jump the else's body when we enter and finish an if body */
+  data_type switchTemp[32];
+  int caseCount[32];    /* Number of cases in a switch */
+  int caseLine[32][32]; /* Variable used to store the c3a line where a case's condition check has to be printed */
+  int casePreviousLines[32][32];
+  int caseEnd[32][32];  /* Variable used to store the c3a line where a case's ending 'GOTO' label has to be printed */
+  int caseStart[32][32];    /* Variable used to store the position of the buffer where the conditional label will be stored in order to jump the case's if said condition is not met */
+  int jumpCase[32][32]; /* Variable used to store the position of the buffer where the label "GOTO" will be stored in order to jump the case's body when we enter a switch statement */
+  char* caseTempCond[32][32];
   char structBuffer[32][512][256];
   int structBufferIndex[32] = {[0 ... 31] = 0};
   bool writtingBufferToFile = false;
@@ -58,6 +66,7 @@
   int structIndex = -1;
   int loopIndex = -1;
   int condIndex = -1;
+  int switchIndex = -1;
 %}
 %define parse.error verbose
 %locations
@@ -81,14 +90,14 @@
 %token <ival> INT BOOL
 %token <fval> FLOAT PI E SIN COS TAN
 %token <sval> STRING BASE CAST
-%token <sense_valor> COMM ASSIGN ENDLINE
+%token <sense_valor> COMM ASSIGN COLON ENDLINE
                       ADD SUB MUL DIV MOD POW 
                       HIG HEQ LOW LEQ EQU NEQ 
                       NOT AND ORR
                       LEN SUBSTR
                       OP CP OB CB
                       SHVAR
-                      IF THEN ELSE FI SW FSW
+                      IF THEN ELSE FI SW CASE BRK DFLT FSW
                       REP WHL DO UNTL DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
@@ -115,8 +124,6 @@ cond:
                             structIndex++;
                             condIndex++;
                             structBufferIndex[structIndex] = 1;
-                            structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
-                            structStart[structIndex] = c3aLineNo - previousLines + 1;
                             c3aLineNo++;
                             isOptionalStruct[structIndex] = true;
                             isElseConditional[structIndex] = false;
@@ -132,7 +139,7 @@ cond:
                 if (condIndex >= 0) {   /* If there is at least one conditional declared */
                     isElseConditional[structIndex] = true;
                     elseLine[structIndex] = c3aLineNo++;
-                    jumpElse[structIndex] = structBufferIndex[structIndex]++; /* We leaVe space in the buffer to store the GOTO label for the ending of the if statement, in order to jump over the else's body */
+                    jumpElse[structIndex] = structBufferIndex[structIndex]++; /* We leave space in the buffer to store the GOTO label for the ending of the if statement, in order to jump over the else's body */
                 } else {    /* If there is no conditional declared, ERROR*/
                     sprintf(err_mssg, "Cannot use the word 'else' without a previous conditional declaration\"");
                     free(to_str);
@@ -142,16 +149,62 @@ cond:
             }
     | SW stmnt  {
                     structIndex++;
-                    condIndex++;
-                    structBufferIndex[structIndex] = 1;
-                    structJumpTo[structIndex] = c3aLineNo - previousLines + 1;
-                    structStart[structIndex] = c3aLineNo - previousLines + 1;
-                    c3aLineNo++;
+                    switchIndex++;
+                    structBufferIndex[structIndex] = 0;
                     isOptionalStruct[structIndex] = true;
                     isElseConditional[structIndex] = false;
+                    caseCount[structIndex] = 0;
+                    caseLine[structIndex][31] = -1;
                     sprintf(structTemp[structIndex], "%s", $2.temp);
+                    switchTemp[structIndex] = $2.val_type;
                     err = false;
                 }
+    | CASE stmnt COLON  {
+                            if (switchIndex >= 0) {   /* If there is at least one switch declared */
+                                if (($2.val_type == INT_TYPE && switchTemp[structIndex] == FLOAT_TYPE) ||
+                                    ($2.val_type == FLOAT_TYPE && switchTemp[structIndex] == INT_TYPE) ||
+                                    ($2.val_type == switchTemp[structIndex])) {
+                                    caseStart[structIndex][caseCount[structIndex]] = structBufferIndex[structIndex]++;   /* We leave space in the buffer to store the conditional jump for that case*/
+                                    c3aLineNo++;
+                                    caseLine[structIndex][caseCount[structIndex]] = c3aLineNo;
+                                    casePreviousLines[structIndex][caseCount[structIndex]] = previousLines;
+                                    caseTempCond[structIndex][caseCount[structIndex]] = strdup($2.temp);
+                                } else {
+                                    sprintf(err_mssg, "Case's condition must match switch's data type\"");
+                                    free(to_str);
+                                    custom_err_mssg(err_mssg);
+                                }
+                            } else {    /* If there is no conditional declared, ERROR*/
+                                sprintf(err_mssg, "Cannot use the word 'case' without a previous switch declaration\"");
+                                free(to_str);
+                                custom_err_mssg(err_mssg);
+                            }
+                            err = false;
+                        }
+    | DFLT COLON    {
+                        if (switchIndex >= 0)  {    /* If there is at least one switch declared */
+                            caseLine[structIndex][31] = c3aLineNo;
+                        } else {    /* If there is no switch declared, ERROR*/
+                            sprintf(err_mssg, "Cannot use the word 'case' without a previous switch declaration\"");
+                            free(to_str);
+                            custom_err_mssg(err_mssg);
+                        }
+                        err = false;
+                    }
+    | BRK   {
+                if (caseCount[structIndex] >= 0 || caseLine[structIndex][31] != -1) {   /* If there is at least one case declared or a default declared*/
+                    if (caseLine[structIndex][31] == -1) {   /* Default section doesn't need a 'GOTO' label since it's the last option */
+                        jumpCase[structIndex][caseCount[structIndex]] = structBufferIndex[structIndex]++;   /* We leave space in the buffer to store the 'GOTO' label' to jump to the end when we eneter a case*/;
+                        c3aLineNo++;
+                        caseEnd[structIndex][caseCount[structIndex]++] = c3aLineNo;
+                    }
+                } else {
+                    sprintf(err_mssg, "Cannot use the word 'break' without a previous case or default declaration\"");
+                    free(to_str);
+                    custom_err_mssg(err_mssg);
+                }
+                err = false;
+            }
     | FI    {
                 if (condIndex >= 0) {   /* If there is at least one conditional declared */
                     c3aLineNo++;
@@ -183,6 +236,47 @@ cond:
                     condIndex--;    /* Indicate one conditional just closed */
                 } else {    /* If there is no conditional declared, ERROR*/
                     sprintf(err_mssg, "Cannot use the word 'fi' without a previous conditional declaration\"");
+                    free(to_str);
+                    custom_err_mssg(err_mssg);
+                }
+                err = false;
+            }
+    | FSW   {
+                if (switchIndex >= 0) {   /* If there is at least one switch declared */
+                    if (caseLine[structIndex][31] != -1) {  /* If the default block has been declared */
+                        c3aLineNo++;
+                        int i;
+                        for (i = 0; i<caseCount[structIndex]; i++) {
+                            int lineToJump = (i < caseCount[structIndex]-1) ? caseLine[structIndex][i+1] - casePreviousLines[structIndex][i+1] : caseLine[structIndex][31]+1;
+                            sprintf(structBuffer[structIndex][caseStart[structIndex][i]], "%d: IF %s NE %s GOTO %d", caseLine[structIndex][i], structTemp[structIndex], caseTempCond[structIndex][i], lineToJump);
+                            sprintf(structBuffer[structIndex][jumpCase[structIndex][i]], "%d: GOTO %d", caseEnd[structIndex][i], c3aLineNo);
+                        }
+
+                        for (i = 0; i<structBufferIndex[structIndex]; i++) {
+                            if (structIndex > 0) {    /* If we are not treating the first structure, pass info from one buffer to the next */
+                                char temp[256];
+                                sprintf(temp, "%s", structBuffer[structIndex][i]);
+                                sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%s", temp);
+                            } else {    /* If we are treating the first structure, printf the whole loop body */
+                                writtingBufferToFile = true;
+                                sprintf(c3a_mssg, "%s", structBuffer[0][i]);
+                                c3a(c3a_mssg);
+                            }
+                        }
+
+                        if (structIndex == 0) {    /* If we are treating the first structure, we can start printing directly to file again */
+                            writtingBufferToFile = false;
+                        }
+                        c3aLineNo--;
+                        structIndex--;    /* Indicate one structure just closed */
+                        switchIndex--;    /* Indicate one switch just closed */
+                    } else {    /* If the default block hasn't been declared */
+                        sprintf(err_mssg, "Switch cannot end without a 'default' block declared\"");
+                        free(to_str);
+                        custom_err_mssg(err_mssg);
+                    }
+                } else {    /* If there is no conditional declared, ERROR*/
+                    sprintf(err_mssg, "Cannot use the word 'fswitch' without a previous switch declaration\"");
                     free(to_str);
                     custom_err_mssg(err_mssg);
                 }

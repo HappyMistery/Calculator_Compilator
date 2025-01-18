@@ -17,4 +17,4 @@ true and NOT true or not true   //false
 
 //Comparations with other data types
 "hola" == "hola"    //true
-true <> I2B 0   //true
+true <> (I2B 0)   //true

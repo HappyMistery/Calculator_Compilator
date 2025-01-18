@@ -11,4 +11,25 @@ else
 fi
 "==============================================="
 switch a
-    case 0
+    case 0:
+        "ZERO"
+        break
+    case 1*2:
+        "TWO"
+        break
+    case 4.0:
+        "FOUR"
+        break
+    case 18/3:
+        "SIX"
+        break
+    case C2I "8":
+        "EIGHT"
+        break
+    case 1*2+2*4:
+        "TEN"
+        break
+    default:
+        "ODD NUMBER OR HIGHER THAN 10"
+        break
+fswitch

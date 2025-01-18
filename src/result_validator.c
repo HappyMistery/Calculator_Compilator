@@ -119,7 +119,7 @@ int validate_results(const char *input_file, const char *output_file) {
         {"(3 > 1.75) AND true or false", "[Boolean] true"},
         {"(not (PI <> PI) OR false) and (true and NOT(false and (4>=5)))", "[Boolean] true"},
         {"\"hola\" == \"hola\"", "[Boolean] true"},
-        {"true <> I2B 0", "[Boolean] true"},
+        {"true <> (I2B 0)", "[Boolean] true"},
     };
 
     const struct {
