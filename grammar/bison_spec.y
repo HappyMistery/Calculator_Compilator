@@ -48,6 +48,7 @@
   char structTemp[32][128];
   char structCondTemp[32][128];
   bool isOptionalStruct[32] = {[0 ... 31] = false}; /* Variable used for structures that have the possibility to not go into the structure's body (while, for x in range, if, if else, switch) */
+  int forLoopDirection[32] = {[0 ... 31] = 0}; /* Variable used to know if a for loop should decrease (-1) or increase (1) */
   bool isElseConditional[32] = {[0 ... 31] = false};
   int elseLine[32]; /* Variable used to store the 3ac line where the else's body starts */
   int jumpElse[32]; /* Variable used to store the position of the buffer where the label "GOTO" will be stored in order to jump the else's body when we enter and finish an if body */
@@ -98,7 +99,7 @@
                       OP CP OB CB
                       SHVAR
                       IF THEN ELSE FI SW CASE BRK DFLT FSW
-                      REP WHL DO UNTL DONE
+                      REP WHL FOR IN RANGE DO UNTL DONE
 
 %type <expr_val> stmnt expr expr1 expr2 expr3 expr4 expr_term
 
@@ -294,6 +295,7 @@ loop:
                                 structJumpTo[structIndex] = c3aLineNo + 2;
                                 structStart[structIndex] = c3aLineNo + 2;
                                 isOptionalStruct[structIndex] = false;
+                                forLoopDirection[structIndex] = 0;
                                 sprintf(structCondTemp[structIndex], "%s", $2.temp);
                                 sprintf(structTemp[structIndex], "$t%03d", c3aOpCount++);
                                 sprintf(c3a_mssg, "%s := %d", structTemp[structIndex], 0);
@@ -326,6 +328,7 @@ loop:
                             structStart[structIndex] = c3aLineNo - previousLines + 1;
                             c3aLineNo++;
                             isOptionalStruct[structIndex] = true;
+                            forLoopDirection[structIndex] = 0;
                             sprintf(structTemp[structIndex], "%s", $2.temp);
                         } else {
                             sprintf(err_mssg, "Structure for a while loop is \"while <boolean_expression> do <statement_list> done\"");
@@ -334,6 +337,37 @@ loop:
                         }
                         err = false;
                     }
+    | FOR ID IN stmnt RANGE stmnt DO    {
+                                            if ($4.val_type == INT_TYPE && $6.val_type == INT_TYPE) {
+                                                if ($4.ival != $6.ival) {   /* We check if we have to do at least one iteration */
+                                                    structIndex++;
+                                                    loopIndex++;
+                                                    structBufferIndex[structIndex] = 0;
+                                                    structJumpTo[structIndex] = c3aLineNo + 2;
+                                                    structStart[structIndex] = c3aLineNo + 2;
+                                                    isOptionalStruct[structIndex] = false;
+                                                    sprintf(structCondTemp[structIndex], "%s", $6.temp);
+                                                    sprintf(structTemp[structIndex], "%s", $2.name);
+                                                    sprintf(c3a_mssg, "%s := %s", structTemp[structIndex], $4.temp);
+                                                    c3a(c3a_mssg);
+                                                    $2.id_val.val_type = $4.val_type;
+                                                    $2.id_val.ival = $4.ival;
+                                                    sym_enter($2.name, &$2);    /* We update that variable's value if it already exist, or create it from scratch if it doesn't */
+                                                    vars[var_index] = $2.name;
+                                                    var_index++;
+                                                    if ($4.ival < $6.ival) forLoopDirection[structIndex] = 1;
+                                                    else forLoopDirection[structIndex] = -1;
+                                                } else {
+                                                    sprintf(err_mssg, "Loop has to be repeated at least 1 time, range values cannot be the same");
+                                                    custom_err_mssg(err_mssg);
+                                                }
+                                            } else {
+                                                sprintf(err_mssg, "The range for a for loop needs to be comprised by two integer values");
+                                                free(to_str);
+                                                custom_err_mssg(err_mssg);
+                                            }
+                                            err = false;
+                                        }
     | DONE  {   
                 if (loopIndex >= 0) {   /* If there is at least one loop declared */
                     if (isOptionalStruct[structIndex]) {    /* Loops that don't require at least one iteration (can skip the loop) need this line */
@@ -356,17 +390,33 @@ loop:
 
                     if (!isOptionalStruct[structIndex]) {
                         if (structIndex > 0) {    /* If we are not treating the first structure, calculate jump points and add conditional lines */
-                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: %s := %s ADDI %d", c3aLineNo+1, structTemp[structIndex], structTemp[structIndex], 1);
-                            c3aLineNo++;
-                            sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: IF %s LTI %s GOTO %d", c3aLineNo+1, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
-                            c3aLineNo++;
+                            if (forLoopDirection[structIndex] == 0 || forLoopDirection[structIndex] == 1) {   /* If we are not treating a for loop, or the for loop is increasing */
+                                sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: %s := %s ADDI %d", c3aLineNo+1, structTemp[structIndex], structTemp[structIndex], 1);
+                                c3aLineNo++;
+                                sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: IF %s LTI %s GOTO %d", c3aLineNo+1, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
+                                c3aLineNo++;
+                            } else {
+                                sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: %s := %s SUBI %d", c3aLineNo+1, structTemp[structIndex], structTemp[structIndex], 1);
+                                c3aLineNo++;
+                                sprintf(structBuffer[structIndex-1][structBufferIndex[structIndex-1]++], "%d: IF %s GTI %s GOTO %d", c3aLineNo+1, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
+                                c3aLineNo++;
+                            }
                         } else {    /* If we are treating the first structure, printf the extra conditional lines */
-                            c3aLineNo++;
-                            sprintf(c3a_mssg, "%d: %s := %s ADDI %d", c3aLineNo, structTemp[structIndex], structTemp[structIndex], 1);
-                            c3a(c3a_mssg);
-                            c3aLineNo++;
-                            sprintf(c3a_mssg, "%d: IF %s LTI %s GOTO %d", c3aLineNo, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
-                            c3a(c3a_mssg);
+                            if (forLoopDirection[structIndex] == 0 || forLoopDirection[structIndex] == 1) {   /* If we are not treating a for loop, or the for loop is increasing */
+                                c3aLineNo++;
+                                sprintf(c3a_mssg, "%d: %s := %s ADDI %d", c3aLineNo, structTemp[structIndex], structTemp[structIndex], 1);
+                                c3a(c3a_mssg);
+                                c3aLineNo++;
+                                sprintf(c3a_mssg, "%d: IF %s LTI %s GOTO %d", c3aLineNo, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
+                                c3a(c3a_mssg);
+                            } else {
+                                c3aLineNo++;
+                                sprintf(c3a_mssg, "%d: %s := %s SUBI %d", c3aLineNo, structTemp[structIndex], structTemp[structIndex], 1);
+                                c3a(c3a_mssg);
+                                c3aLineNo++;
+                                sprintf(c3a_mssg, "%d: IF %s GTI %s GOTO %d", c3aLineNo, structTemp[structIndex], structCondTemp[structIndex], structJumpTo[structIndex]);
+                                c3a(c3a_mssg);
+                            }
                             writtingBufferToFile = false;
                         }
                     } else {

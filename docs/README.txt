@@ -158,6 +158,10 @@ emmagatzemats a l'arxiu 'logs/error_log.txt'.
         És a dir, pot tenir des de 0 casos fins a 31 casos, però sempre ha d'haver-hi 
         el cas default.
 
+    18. El bucle for pot ser ascendent o descendent, depenent de l'ordre del rang esepcificat.
+        En cas de que el primer element del rang sigui menor al segon, el bucle iterarà de
+        manera ascendent, afegint +1 al id a cada iteració. En cas contrari es restarà -1 al id.
+
 ┌──────────────────────────────────────┐
 │                SYMTAB:               │
 └──────────────────────────────────────┘
