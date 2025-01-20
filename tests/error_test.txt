@@ -20,3 +20,22 @@ xyz[4] := 3.5
 xyz[7] := true  //Array 'xyz[]' cannot be resized to accept element 'xyz[7]'
 false == 3  //Equal (==) operator for type 'Boolean' can only operate against another value of type 'Boolean'
 PI <> "PI"  //Not equal (<>) operator for type 'String' can only operate against another value of type 'String'
+else    //Cannot use the word 'else' without a previous conditional declaration
+fi  //Cannot use the word 'fi' without a previous conditional declaration
+if 4 then   //Structure for an if conditional is "if <boolean_expression> then <statement_list> fi
+case 0:    //Cannot use the word 'case' without a previous switch declaration
+default: //Cannot use the word 'default' without a previous switch declaration
+fswitch //Cannot use the word 'fswitch' without a previous switch declaration
+switch 5
+    case "hola":    //Case's condition must match switch's data type
+fswitch    //Switch cannot end without a 'default' block declared
+done    //Cannot use the word 'done' without a previous loop declaration
+until true  //Cannot use 'until <boolean_expression>' without a previous loop declaration
+repeat 0 do //Loop has to be repeated at least 1 time, not lower
+repeat "hola" do    //Structure for a repeat loop is "repeat <arithmetic_integer_expression> do <statement_list> done"
+while 5 do  //Structure for a while loop is "while <boolean_expression> do <statement_list> done"
+for a in 3..3 do    //Loop has to be repeated at least 1 time, range values cannot be the same
+for b in true..76 do    //The range for a for loop needs to be comprised by two integer values
+do
+    "aa"
+until "xd"  //Structure for a do until loop is "do <statement_list> until <boolean_expression>"

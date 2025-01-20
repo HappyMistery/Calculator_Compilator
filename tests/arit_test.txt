@@ -44,7 +44,7 @@ TAN(PI / 3)      // 1.73205
 
 // Basic mixed operations (int and trig)
 LEN("Las estrellas brillan de noche") + sin(30)     // 29.012
-45 - cos(30)     // 44.8457
+C2I "45" - cos(30)     // 44.8457
 60 * tan(30)     // -384.32
 
 // Basic mixed operations (float and trig)

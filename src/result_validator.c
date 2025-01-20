@@ -79,7 +79,7 @@ int validate_results(const char *input_file, const char *output_file) {
         {"cos(PI / 3)", result_to_string("float", cos(M_PI / 3))}, 
         {"TAN(PI / 3)", result_to_string("float", tan(M_PI / 3))}, 
         {"LEN(\"Las estrellas brillan de noche\") + sin(30)", result_to_string("float", strlen("Las estrellas brillan de noche") + sin(30))}, 
-        {"45 - cos(30)", result_to_string("float", 45 - cos(30))}, 
+        {"C2I \"45\" - cos(30)", result_to_string("float", 45 - cos(30))}, 
         {"60 * tan(30)", result_to_string("float", 60 * tan(30))}, 
         {"7.5 + sin(PI / 6)", result_to_string("float", 7.5 + sin(M_PI / 6))}, 
         {"10.5 - cos(PI / 4)", result_to_string("float", 10.5 - cos(M_PI / 4))}, 
@@ -199,14 +199,29 @@ int validate_results(const char *input_file, const char *output_file) {
         {"arr[5]", " Array element 'arr[5]' does not exist"},
         {"xyz[7] := true",  " Array 'xyz[]' cannot be resized to accept element 'xyz[7]'"},
         {"false == 3", " Equal (==) operator for type 'Boolean' can only operate against another value of type 'Boolean'"},
-        {"PI <> \"PI\"", " Not equal (<>) operator for type 'String' can only operate against another value of type 'String'"}
+        {"PI <> \"PI\"", " Not equal (<>) operator for type 'String' can only operate against another value of type 'String'"},
+        {"else", " Cannot use the word 'else' without a previous conditional declaration"},
+        {"fi", " Cannot use the word 'fi' without a previous conditional declaration"},
+        {"if 4 then", " Structure for an if conditional is \"if <boolean_expression> then <statement_list> fi\""},
+        {"case", " Cannot use the word 'case' without a previous switch declaration"},
+        {"default", " Cannot use the word 'default' without a previous switch declaration"},
+        {"fswitch", " Cannot use the word 'fswitch' without a previous switch declaration"},
+        {"case \"hola\":", " Case's condition must match switch's data type"},
+        {"fswitch", " Switch cannot end without a 'default' block declared"},
+        {"done", " Cannot use the word 'done' without a previous loop declaration"},
+        {"until true", " Cannot use 'until <boolean_expression>' without a previous loop declaration"},
+        {"repeat 0 do", " Loop has to be repeated at least 1 time, not lower"},
+        {"repeat \"hola\" do", " Structure for a repeat loop is \"repeat <arithmetic_integer_expression> do <statement_list> done\""},
+        {"while 5 do", " Structure for a while loop is \"while <boolean_expression> do <statement_list> done\""},
+        {"for a in 3..3 do", " Loop has to be repeated at least 1 time, range values cannot be the same"},
+        {"for b in true..76 do", " The range for a for loop needs to be comprised by two integer values"},
+        {"until \"xd\"", " Structure for a do until loop is \"do <statement_list> until <boolean_expression>\""}
     };
 
     if(strcmp(input_file, "tests/arit_test.txt") == 0) {
         total_results = sizeof(arit_test) / sizeof(arit_test[0]);
         passed = 0;
         printf("\n\n\n========================================| %d aritmetic operations tests to pass... |========================================\n\n", total_results);
-        printf("\n%d aritmetic tests to pass...\n", total_results);
         for (index = 0; index < total_results; index++) {
             fgets(buffer, BUFFER_LENGTH, file);
 

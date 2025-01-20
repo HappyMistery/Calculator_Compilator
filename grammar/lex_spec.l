@@ -67,24 +67,24 @@ CAST I2F|I2B|F2I|F2B|B2I|B2F|B2C|C2I|C2F|C2B
 
 "showVars()"    { append_to_buffer(yytext); return SHVAR; }
 
-"if"        { append_to_buffer(yytext); return IF; }
-"then"      { append_to_buffer(yytext); return THEN; }
-"else"      { append_to_buffer(yytext); return ELSE; }
-"fi"        { append_to_buffer(yytext); return FI; }
-"switch"    { append_to_buffer(yytext); return SW; }
-"case"      { append_to_buffer(yytext); return CASE; }
-"break"     { append_to_buffer(yytext); return BRK; }
-"default"   { append_to_buffer(yytext); return DFLT; }
-"fswitch"   { append_to_buffer(yytext); return FSW; }
+"if"|"IF"           { append_to_buffer(yytext); return IF; }
+"then"|"THEN"       { append_to_buffer(yytext); return THEN; }
+"else"|"ELSE"       { append_to_buffer(yytext); return ELSE; }
+"fi"|"FI"           { append_to_buffer(yytext); return FI; }
+"switch"|"SWITCH"   { append_to_buffer(yytext); return SW; }
+"case"|"CASE"       { append_to_buffer(yytext); return CASE; }
+"break"|"BREAK"     { append_to_buffer(yytext); return BRK; }
+"default"|"DEFAULT" { append_to_buffer(yytext); return DFLT; }
+"fswitch"|"FSWITCH" { append_to_buffer(yytext); return FSW; }
 
-"repeat"    { append_to_buffer(yytext); return REP; }
-"while"     { append_to_buffer(yytext); return WHL; }
-"for"       { append_to_buffer(yytext); return FOR; }
-"in"        { append_to_buffer(yytext); return IN; }
-".."        { append_to_buffer(yytext); return RANGE; }
-"do"        { append_to_buffer(yytext); return DO; }
-"until"     { append_to_buffer(yytext); return UNTL; }
-"done"      { append_to_buffer(yytext); return DONE; }
+"repeat"|"REPEAT"   { append_to_buffer(yytext); return REP; }
+"while"|"WHILE"     { append_to_buffer(yytext); return WHL; }
+"for"|"FOR"         { append_to_buffer(yytext); return FOR; }
+"in"|"IN"           { append_to_buffer(yytext); return IN; }
+".."                { append_to_buffer(yytext); return RANGE; }
+"do"|"DO"           { append_to_buffer(yytext); return DO; }
+"until"|"UNTIL"     { append_to_buffer(yytext); return UNTL; }
+"done"|"DONE"       { append_to_buffer(yytext); return DONE; }
 
 {BASE}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return BASE; }
 {CAST}      { append_to_buffer(yytext); yylval.sval = strdup(yytext); return CAST; }

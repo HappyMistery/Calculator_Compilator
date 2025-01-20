@@ -130,8 +130,7 @@ cond:
                             isElseConditional[structIndex] = false;
                             sprintf(structTemp[structIndex], "%s", $2.temp);
                         } else {
-                            sprintf(err_mssg, "Structure for an if conditional is \"if <boolean_expression> do <statement_list> fi\"");
-                            free(to_str);
+                            sprintf(err_mssg, "Structure for an if conditional is \"if <boolean_expression> then <statement_list> fi\"");
                             custom_err_mssg(err_mssg);
                         }
                         err = false;
@@ -142,8 +141,7 @@ cond:
                     elseLine[structIndex] = c3aLineNo++;
                     jumpElse[structIndex] = structBufferIndex[structIndex]++; /* We leave space in the buffer to store the GOTO label for the ending of the if statement, in order to jump over the else's body */
                 } else {    /* If there is no conditional declared, ERROR*/
-                    sprintf(err_mssg, "Cannot use the word 'else' without a previous conditional declaration\"");
-                    free(to_str);
+                    sprintf(err_mssg, "Cannot use the word 'else' without a previous conditional declaration");
                     custom_err_mssg(err_mssg);
                 }
                 err = false;
@@ -171,13 +169,11 @@ cond:
                                     casePreviousLines[structIndex][caseCount[structIndex]] = previousLines;
                                     caseTempCond[structIndex][caseCount[structIndex]] = strdup($2.temp);
                                 } else {
-                                    sprintf(err_mssg, "Case's condition must match switch's data type\"");
-                                    free(to_str);
+                                    sprintf(err_mssg, "Case's condition must match switch's data type");
                                     custom_err_mssg(err_mssg);
                                 }
                             } else {    /* If there is no conditional declared, ERROR*/
-                                sprintf(err_mssg, "Cannot use the word 'case' without a previous switch declaration\"");
-                                free(to_str);
+                                sprintf(err_mssg, "Cannot use the word 'case' without a previous switch declaration");
                                 custom_err_mssg(err_mssg);
                             }
                             err = false;
@@ -186,8 +182,7 @@ cond:
                         if (switchIndex >= 0)  {    /* If there is at least one switch declared */
                             caseLine[structIndex][31] = c3aLineNo;
                         } else {    /* If there is no switch declared, ERROR*/
-                            sprintf(err_mssg, "Cannot use the word 'case' without a previous switch declaration\"");
-                            free(to_str);
+                            sprintf(err_mssg, "Cannot use the word 'default' without a previous switch declaration");
                             custom_err_mssg(err_mssg);
                         }
                         err = false;
@@ -200,8 +195,7 @@ cond:
                         caseEnd[structIndex][caseCount[structIndex]++] = c3aLineNo;
                     }
                 } else {
-                    sprintf(err_mssg, "Cannot use the word 'break' without a previous case or default declaration\"");
-                    free(to_str);
+                    sprintf(err_mssg, "Cannot use the word 'break' without a previous case or default declaration");
                     custom_err_mssg(err_mssg);
                 }
                 err = false;
@@ -236,8 +230,7 @@ cond:
                     structIndex--;    /* Indicate one structure just closed */
                     condIndex--;    /* Indicate one conditional just closed */
                 } else {    /* If there is no conditional declared, ERROR*/
-                    sprintf(err_mssg, "Cannot use the word 'fi' without a previous conditional declaration\"");
-                    free(to_str);
+                    sprintf(err_mssg, "Cannot use the word 'fi' without a previous conditional declaration");
                     custom_err_mssg(err_mssg);
                 }
                 err = false;
@@ -272,13 +265,11 @@ cond:
                         structIndex--;    /* Indicate one structure just closed */
                         switchIndex--;    /* Indicate one switch just closed */
                     } else {    /* If the default block hasn't been declared */
-                        sprintf(err_mssg, "Switch cannot end without a 'default' block declared\"");
-                        free(to_str);
+                        sprintf(err_mssg, "Switch cannot end without a 'default' block declared");
                         custom_err_mssg(err_mssg);
                     }
                 } else {    /* If there is no conditional declared, ERROR*/
-                    sprintf(err_mssg, "Cannot use the word 'fswitch' without a previous switch declaration\"");
-                    free(to_str);
+                    sprintf(err_mssg, "Cannot use the word 'fswitch' without a previous switch declaration");
                     custom_err_mssg(err_mssg);
                 }
                 err = false;
@@ -332,7 +323,6 @@ loop:
                             sprintf(structTemp[structIndex], "%s", $2.temp);
                         } else {
                             sprintf(err_mssg, "Structure for a while loop is \"while <boolean_expression> do <statement_list> done\"");
-                            free(to_str);
                             custom_err_mssg(err_mssg);
                         }
                         err = false;
@@ -363,7 +353,6 @@ loop:
                                                 }
                                             } else {
                                                 sprintf(err_mssg, "The range for a for loop needs to be comprised by two integer values");
-                                                free(to_str);
                                                 custom_err_mssg(err_mssg);
                                             }
                                             err = false;
@@ -432,14 +421,13 @@ loop:
                     structIndex--;    /* Indicate one structure just closed */
                     loopIndex--;    /* Indicate one loop just closed */
                 } else {    /* If there is no loop declared, ERROR*/
-                    sprintf(err_mssg, "Cannot use the word 'done' without a previous loop declaration\"");
-                    free(to_str);
+                    sprintf(err_mssg, "Cannot use the word 'done' without a previous loop declaration");
                     custom_err_mssg(err_mssg);
                 }
                 err = false;
             }
     | UNTL stmnt    {
-                        if (structIndex >= 0) {   /* If there is at least one loop declared */
+                        if (loopIndex >= 0) {   /* If there is at least one loop declared */
                             if ($2.val_type == BOOL_TYPE) {
                                 sprintf(structTemp[structIndex], "%s", $2.temp);
                                 int i;
@@ -465,12 +453,10 @@ loop:
                                 structIndex--;    /* Indicate one loop just closed */
                             } else {
                                 sprintf(err_mssg, "Structure for a do until loop is \"do <statement_list> until <boolean_expression>\"");
-                                free(to_str);
                                 custom_err_mssg(err_mssg);
                             }
                         } else {    /* If there is no loop declared, ERROR*/
-                            sprintf(err_mssg, "Cannot use 'until <boolean_expression>' without a previous loop declaration\"");
-                            free(to_str);
+                            sprintf(err_mssg, "Cannot use 'until <boolean_expression>' without a previous loop declaration");
                             custom_err_mssg(err_mssg);
                         }
                         err = false;
