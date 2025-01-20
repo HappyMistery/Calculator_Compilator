@@ -15,7 +15,9 @@ repeat a do
     repeat 3 do
         do
             while not false do
-                a*9
+                for i in a..8 do
+                    a*9
+                done
             done
         until a < 12000
     done
@@ -27,15 +29,17 @@ repeat 6 * 3 do
     done
 done
 "==============================================="
-while (true and false and (PI > d)) do
-    while 4 > E do
-        do
-            repeat 5 do
-                while 1 <> 1 do
-                    "can't reach"
+for i in 0..5 do
+    while (true and false and (PI > d)) do
+        while 4 > E do
+            do
+                repeat 5 do
+                    while 1 <> 1 do
+                        "can't reach " + i
+                    done
                 done
-            done
-        until E > PI
+            until E > PI
+        done
     done
 done
 "==============================================="
@@ -46,3 +50,13 @@ do
         x := x+1
     until x > 10
 until x == 50
+"==============================================="
+while a > 32 do
+    do
+        for x in 3..6 do
+            repeat x do
+                "A"
+            done
+        done
+    until true
+done

@@ -29,3 +29,30 @@ else
         "xd"
     done
 fi
+"==============================================="
+for var in i..arr[20] do
+    if PI == 3.14159 then
+        repeat 2 do
+            "well well well!"
+        done
+    else
+        switch i
+            case 0:
+                while true do
+                    "No"
+                done
+                break
+            case 10:
+                "Can I get a 10?"
+                break
+            case i:
+                "More like a 9.75 + " + 0.25
+                break
+            default:
+                for xd in 0..1 do
+                    "You get nothing"
+                done
+                break
+        fswitch
+    fi
+done
